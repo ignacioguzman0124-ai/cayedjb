@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#f8f7f4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>CayeDJB Mobile</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQ2F5ZURKQiBNb2JpbGUiLCJzaG9ydF9uYW1lIjoiQ2F5ZURKQiIsInN0YXJ0X3VybCI6Ii4vQ2F5ZURKQi1tb2JpbGUuaHRtbCIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxYzFjMWEiLCJ0aGVtZV9jb2xvciI6IiMxYzFjMWEiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHRleHQgeT0nLjllbScgZm9udC1zaXplPSc5MCc+8J+QvjwvdGV4dD48L3N2Zz4iLCJzaXplcyI6ImFueSIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
+<script>
+(function(){
+  if(localStorage.getItem("gz2_auth")==="241333")return;
+  document.addEventListener("DOMContentLoaded",function(){
+    document.body.style.overflow="hidden";
+    var ov=document.createElement("div");
+    ov.id="pin-wall";
+    ov.style.cssText="position:fixed;top:0;left:0;width:100vw;height:100vh;background:#f8f7f4;z-index:999999;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif";
+    ov.innerHTML='<div style="text-align:center"><div style="font-size:48px;margin-bottom:16px">🐾</div><div style="color:#92400e;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px">CayeDJB · Acceso Seguro</div><input id="gz2pin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN" style="width:200px;padding:14px;border-radius:14px;border:2px solid #e8e3dc;background:#fff;color:#1c1c1a;font-size:24px;text-align:center;outline:none;font-family:inherit;letter-spacing:.3em" autofocus><br><button id="gz2go" style="margin-top:16px;padding:14px 48px;border-radius:14px;border:none;background:#22c55e;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Entrar</button><div id="gz2err" style="color:#ef4444;margin-top:12px;font-size:13px;min-height:20px"></div></div>';
+    document.body.appendChild(ov);
+    function tryPin(){var v=document.getElementById("gz2pin").value;if(v==="241333"){localStorage.setItem("gz2_auth","241333");document.getElementById("pin-wall").remove();document.body.style.overflow=""}else{document.getElementById("gz2err").textContent="PIN incorrecto";document.getElementById("gz2pin").value="";document.getElementById("gz2pin").focus()}}
+    document.getElementById("gz2go").onclick=tryPin;
+    document.getElementById("gz2pin").addEventListener("keydown",function(e){if(e.key==="Enter")tryPin()});
+  });
+})();
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#f8f7f4;color:#1c1c1a;font-family:system-ui,-apple-system,sans-serif;font-size:16px;-webkit-font-smoothing:antialiased}
+#app{height:100%;display:flex;flex-direction:column}
+.hdr{padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:#fff;border-bottom:1.5px solid #e8e3dc;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.hdr-date{font-size:15px;font-weight:700;color:#1c1c1a}.hdr-sync{font-size:11px;padding:3px 8px;border-radius:12px}
+.view{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px 100px}
+.shift-hdr{text-align:center;padding:16px 0 10px}
+.shift-hdr .shift-name{font-size:22px;font-weight:800;letter-spacing:.02em;color:#1c1c1a}
+.shift-hdr .shift-time{font-size:13px;color:#888;margin-top:2px}
+.dog-row{display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px;border-radius:14px;background:#fff;border:1.5px solid #e8e3dc;transition:background .15s,border-color .15s;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.dog-row.absent{background:#fef2f2;border-color:#fecaca}
+.dog-row.pending{background:#fffbeb;border-color:#fde68a;animation:pulse-amber 2s infinite}
+@keyframes pulse-amber{0%,100%{border-color:#fde68a}50%{border-color:#f59e0b}}
+.dog-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;flex-shrink:0}
+.dog-name{flex:1;font-size:15px;font-weight:700;color:#1c1c1a}
+.dog-btns{display:flex;gap:6px}
+.btn-ok,.btn-no{width:52px;height:52px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;cursor:pointer;transition:transform .1s}
+.btn-ok{background:#f0f0ec;border-color:#d4d0c8;color:#bbb}
+.btn-ok.confirmed{background:#22c55e;border-color:#16a34a;color:#fff}
+.btn-ok.off{background:#f0f0ec;border-color:#d4d0c8;color:#bbb}
+.btn-no{background:#f0f0ec;border-color:#d4d0c8;color:#bbb}
+.btn-no.on{background:#ef4444;border-color:#dc2626;color:#fff}
+.btn-ok:active,.btn-no:active{transform:scale(.92)}
+.shift-day-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-radius:14px;margin-bottom:8px;border:1.5px solid #e8e3dc}
+.shift-day-nav .sdn-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #e8e3dc;background:#f8f7f4;color:#1c1c1a;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.shift-day-nav .sdn-btn:active{background:#e8e3dc}
+.shift-day-nav .sdn-btn:disabled{opacity:.3;cursor:default}
+.past-banner{background:#fffbeb;color:#92400e;text-align:center;padding:8px;font-size:12px;font-weight:700;border-radius:10px;margin-bottom:8px;border:1.5px solid #fde68a}
+.btn-dbl{width:36px;height:36px;border-radius:50%;border:2px solid #e8e3dc;background:#f8f7f4;color:#6366f1;font-size:11px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s}
+.btn-dbl:active{transform:scale(.92)}
+.btn-dbl.on{background:#6366f1;border-color:#4f46e5;color:#fff}
+.btn-listo{width:100%;height:64px;border-radius:16px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:20px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin:14px 0;letter-spacing:.02em;box-shadow:0 4px 20px rgba(34,197,94,.25);transition:transform .1s}
+.btn-listo:active{transform:scale(.97)}
+.btn-listo.saved{background:linear-gradient(135deg,#86efac,#4ade80);color:#15803d;box-shadow:0 2px 10px rgba(34,197,94,.15)}
+.btn-facturado{width:100%;height:52px;border-radius:14px;border:2px dashed #fbbf24;background:#fffbeb;color:#92400e;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin:14px 0;transition:transform .1s}
+.btn-facturado:active{transform:scale(.97)}
+.day-summary{padding:8px 14px;margin-bottom:6px;border-radius:12px;background:#fff;border:1px solid #e8e3dc;display:flex;align-items:center;gap:10px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.day-summary .ds-icon{font-size:18px;width:28px;text-align:center}
+.day-summary .ds-label{flex:1;font-size:14px;font-weight:600;color:#1c1c1a}
+.day-summary .ds-status{font-size:12px;font-weight:700;padding:2px 8px;border-radius:8px}
+.week-row{display:flex;gap:6px;padding:10px 14px}
+.week-day{flex:1;text-align:center;padding:10px 0;border-radius:10px;background:#fff;border:1px solid #e8e3dc;font-size:12px;font-weight:700;color:#1c1c1a;cursor:pointer}
+.week-day.done{background:#f0fdf4;border-color:#86efac;color:#15803d}
+.week-day.today{border-color:#f59e0b;color:#f59e0b}
+.nav{display:flex;border-top:1.5px solid #e8e3dc;background:#fff;flex-shrink:0;position:relative;z-index:10}
+.nav-btn{flex:1;padding:10px 0;text-align:center;font-size:11px;font-weight:700;color:#aaa;cursor:pointer;border:none;background:none;transition:color .15s}
+.nav-btn.on{color:#16a34a}
+.nav-btn .nav-ico{font-size:20px;display:block;margin-bottom:2px}
+.fab{position:fixed;bottom:72px;right:14px;width:56px;height:56px;border-radius:50%;background:#f59e0b;color:#fff;border:none;font-size:28px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(245,158,11,.3);z-index:20;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.fab:active{transform:scale(.9)}
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);z-index:30;display:flex;align-items:flex-end}
+.modal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:80vh;overflow-y:auto;padding:20px 16px 30px;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;color:#1c1c1a}
+.modal-close{width:32px;height:32px;border-radius:50%;background:#f0f0ec;border:none;color:#888;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.input-amount{width:100%;padding:14px;border-radius:12px;border:2px solid #e8e3dc;background:#f8f7f4;color:#1c1c1a;font-size:24px;font-weight:800;text-align:center;outline:none;font-family:inherit}
+.input-amount:focus{border-color:#f59e0b}
+.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.cat-chip{padding:8px 14px;border-radius:20px;border:1.5px solid #e8e3dc;background:#fff;color:#888;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.cat-chip.on{background:#f59e0b;border-color:#f59e0b;color:#fff}
+.payer-row{display:flex;gap:10px;margin:10px 0}
+.payer-btn{flex:1;padding:10px;border-radius:12px;border:1.5px solid #e8e3dc;background:#fff;color:#888;font-size:13px;font-weight:700;text-align:center;cursor:pointer}
+.payer-btn.on{border-color:#16a34a;color:#15803d;background:#f0fdf4}
+.brd-dog{display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px;border-radius:14px;background:#fff;border:1.5px solid #e8e3dc;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.brd-toggle{width:56px;height:36px;border-radius:18px;background:#d4d0c8;border:none;position:relative;cursor:pointer;transition:background .2s}
+.brd-toggle.on{background:#8b5cf6}
+.brd-toggle::after{content:"";position:absolute;top:3px;left:3px;width:30px;height:30px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.brd-toggle.on::after{left:23px}
+.brd-toggle-extra{width:56px;height:36px;border-radius:18px;background:#d4d0c8;border:none;position:relative;cursor:pointer;transition:background .2s}
+.brd-toggle-extra.on{background:#8b5cf6}
+.brd-toggle-extra::after{content:"";position:absolute;top:3px;left:3px;width:30px;height:30px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.brd-toggle-extra.on::after{left:23px}
+.settings-btn{width:100%;padding:10px;border-radius:12px;border:1.5px solid #e8e3dc;background:#fff;color:#666;font-size:12px;font-weight:600;text-align:center;cursor:pointer;margin-top:6px}
+.sect-title{font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;padding:14px 0 8px}
+/* Planner */
+.plan-day-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-radius:14px;margin-bottom:10px;border:1.5px solid #e8e3dc}
+.plan-day-nav .pdn-btn{width:40px;height:40px;border-radius:50%;border:1.5px solid #e8e3dc;background:#f8f7f4;color:#1c1c1a;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.plan-day-nav .pdn-btn:active{background:#e8e3dc}
+.plan-day-nav .pdn-label{font-size:14px;font-weight:700;color:#1c1c1a;text-align:center}
+.plan-day-nav .pdn-sub{font-size:11px;color:#888;margin-top:2px}
+.plan-shift{background:#fff;border-radius:14px;border:1.5px solid #e8e3dc;margin-bottom:8px;overflow:hidden}
+.plan-shift-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8f7f4;border-bottom:1px solid #e8e3dc}
+.plan-shift-hdr .psh-name{font-size:13px;font-weight:800;color:#1c1c1a}
+.plan-shift-hdr .psh-time{font-size:11px;color:#888}
+.plan-shift-body{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;min-height:44px;align-items:center}
+.plan-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:20px;font-size:12px;font-weight:700;color:#fff;cursor:default;transition:transform .1s}
+.plan-chip .pc-x{width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.2);color:#fff;border:none;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0}
+.plan-chip .pc-x:active{background:rgba(0,0,0,.4)}
+.plan-add-btn{width:32px;height:32px;border-radius:50%;border:2px dashed #ccc;background:none;color:#999;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.plan-add-btn:active{border-color:#888;color:#555}
+.plan-pool{background:#fff;border-radius:14px;border:1.5px solid #e8e3dc;padding:12px;margin-top:8px}
+.plan-pool-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.plan-pool-dogs{display:flex;flex-wrap:wrap;gap:6px}
+.plan-pool-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid #e8e3dc;background:#f8f7f4;color:#1c1c1a;cursor:pointer;transition:all .15s}
+.plan-pool-chip:active{background:#e8e3dc;transform:scale(.95)}
+.plan-new-btn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px dashed #d4d0c8;background:none;color:#888;cursor:pointer}
+.plan-new-btn:active{border-color:#888;color:#555}
+.plan-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:flex-end}
+.plan-modal-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:65vh;padding:16px;overflow-y:auto}
+.plan-modal-title{font-size:15px;font-weight:800;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.plan-input{width:100%;padding:12px;border-radius:12px;border:2px solid #e8e3dc;background:#f8f7f4;color:#1c1c1a;font-size:16px;font-weight:700;outline:none;font-family:inherit;margin-bottom:10px}
+.plan-input:focus{border-color:#f59e0b}
+.plan-confirm{width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:15px;font-weight:800;cursor:pointer;margin-top:6px}
+.plan-dbl-badge{font-size:9px;background:rgba(255,255,255,.3);padding:1px 5px;border-radius:8px;margin-left:2px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ═══ DATA (from CayeDJB.html) ═══ */
+var WD = {"2026-01-02": {"s1": ["chapo", "gigi", "pistachio", "lulu"], "s2": [], "s3": [], "s4": []}, "2026-01-05": {"s1": ["chapo", "gigi", "pistachio", "lulu"], "s2": [], "s3": ["clover", "neo"], "s4": ["neo", "bing", "indy", "cato"]}, "2026-01-06": {"s1": ["chapo", "gigi", "snoopy", "pistachio", "lulu"], "s2": [], "s3": ["bob", "clover", "aspen", "old coco"], "s4": ["neo", "bing", "indy", "cato"]}, "2026-01-07": {"s1": ["chapo", "gigi", "snoopy", "pistachio", "lulu"], "s2": [], "s3": ["bob", "clover", "aspen", "old coco"], "s4": ["neo", "bing", "indy", "cato"]}, "2026-01-08": {"s1": ["chapo", "gigi", "snoopy", "pistachio", "lulu"], "s2": [], "s3": ["bob", "clover", "aspen", "old coco"], "s4": ["neo", "bing", "indy", "cato"]}, "2026-01-09": {"s1": ["chapo", "gigi", "snoopy", "pistachio", "lulu"], "s2": [], "s3": ["clover", "aspen", "old coco", "neo"], "s4": ["neo", "bing", "indy", "cato"]}, "2026-01-12": {"s1": ["chapo", "balu", "maya", "purdey", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "jimmy", "old coco", "yopo"], "s4": ["neo", "bing", "indy", "cato", "flaco", "lara", "river"]}, "2026-01-13": {"s1": ["chapo", "balu", "maya", "purdey", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["bob", "nellie", "clover", "jimmy", "old coco", "yopo"], "s4": ["neo", "bing", "indy", "cato", "flaco", "lara", "river", "teddy"]}, "2026-01-14": {"s1": ["chapo", "balu", "maya", "purdey", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["bob", "nellie", "clover", "aspen", "jimmy", "old coco", "yopo"], "s4": ["neo", "bing", "indy", "cato", "flaco", "lara", "river"]}, "2026-01-15": {"s1": ["chapo", "balu", "maya", "purdey", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["bob", "nellie", "clover", "aspen", "jimmy", "old coco", "yopo"], "s4": ["neo", "bing", "indy", "cato", "flaco", "lara", "river"]}, "2026-01-16": {"s1": ["chapo", "balu", "maya", "purdey", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "old coco", "yopo"], "s4": ["neo", "bing", "indy", "cato", "flaco", "lara", "river", "teddy"]}, "2026-01-19": {"s1": ["chapo", "balu", "maya", "purdey", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "old coco", "yopo", "neo"], "s4": ["bing", "indy", "cato", "flaco", "lara", "river"]}, "2026-01-20": {"s1": ["chapo", "balu", "maya", "purdey", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "bob", "yopo", "neo"], "s4": ["bing", "indy", "cato", "flaco", "lara", "river"]}, "2026-01-21": {"s1": ["chapo", "balu", "maya", "purdey", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "old coco", "yopo", "neo", "bob"], "s4": ["bing", "indy", "cato", "flaco", "lara", "river", "teddy"]}, "2026-01-22": {"s1": ["chapo", "balu", "maya", "purdey", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "old coco", "yopo", "neo", "bob"], "s4": ["bing", "indy", "cato", "flaco", "lara", "river"]}, "2026-01-23": {"s1": ["chapo", "balu", "maya", "purdey", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "old coco", "yopo", "neo"], "s4": ["bing", "indy", "cato", "flaco", "lara", "river", "teddy"]}, "2026-01-26": {"s1": ["chapo", "balu", "maya", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "old coco", "yopo", "neo"], "s4": ["bing", "indy", "cato", "flaco", "lara", "river"]}, "2026-01-27": {"s1": ["chapo", "balu", "maya", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "bob", "yopo", "neo"], "s4": ["bing", "indy", "cato", "flaco", "lara", "river"]}, "2026-01-28": {"s1": ["chapo", "balu", "maya", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "old coco", "yopo", "neo", "bob"], "s4": ["bing", "indy", "cato", "flaco", "lara", "river", "teddy"]}, "2026-01-29": {"s1": ["chapo", "balu", "maya", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "old coco", "yopo", "neo", "bob"], "s4": ["bing", "indy", "cato", "flaco", "lara", "river"]}, "2026-01-30": {"s1": ["chapo", "balu", "maya", "gigi"], "s2": ["lulu", "rey", "snoopy"], "s3": ["nellie", "clover", "aspen", "jimmy", "old coco", "yopo", "neo"], "s4": ["bing", "indy", "cato", "flaco", "lara", "river", "teddy"]}, "2026-02-02": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": [], "s3": ["aspen", "nellie", "clover", "jimmy"], "s4": ["cato", "neo", "old coco"]}, "2026-02-03": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco"]}, "2026-02-04": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": []}, "2026-02-05": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "old coco"], "s4": ["cato", "lara", "river", "flaco"]}, "2026-02-06": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco"]}, "2026-02-09": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco"]}, "2026-02-10": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco"]}, "2026-02-11": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "old coco"], "s4": ["cato", "lara", "river", "flaco"]}, "2026-02-12": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco"]}, "2026-02-13": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara", "river"]}, "2026-02-16": {"s1": ["chapo", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco", "teddy"]}, "2026-02-17": {"s1": ["chapo", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco", "teddy"]}, "2026-02-18": {"s1": ["chapo", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "neo", "yopo", "old coco"], "s4": ["cato", "lara", "river", "flaco", "teddy"]}, "2026-02-19": {"s1": ["chapo", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco", "teddy"]}, "2026-02-20": {"s1": ["chapo", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara", "river"]}, "2026-02-23": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco", "teddy", "moses"]}, "2026-02-24": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco", "teddy", "moses"]}, "2026-02-25": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "old coco"], "s4": ["cato", "lara", "river", "flaco", "teddy", "moses"]}, "2026-02-26": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco", "teddy", "moses"]}, "2026-02-27": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu", "maya", "pistachio"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara", "river", "flaco", "teddy", "moses"]}, "2026-03-02": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-03-03": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-03-04": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "coco"], "s4": ["cato", "lara&river", "flaco", "moses"]}, "2026-03-05": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses"]}, "2026-03-06": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses"]}, "2026-03-09": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses"]}, "2026-03-10": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses"]}, "2026-03-11": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "old coco"], "s4": ["cato", "lara&river", "flaco", "moses"]}, "2026-03-12": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses"]}, "2026-03-13": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses"]}, "2026-03-16": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses", "teddy"]}, "2026-03-17": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses", "teddy"]}, "2026-03-18": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "old coco"], "s4": ["cato", "lara&river", "flaco", "moses", "teddy"]}, "2026-03-19": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses", "teddy"]}, "2026-03-20": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses", "teddy"]}, "2026-03-23": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses", "teddy"]}, "2026-03-24": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses", "teddy"]}, "2026-03-25": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "old coco"], "s4": ["cato", "lara&river", "flaco", "moses", "teddy", "coco", "bing"]}, "2026-03-26": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses", "teddy", "coco", "bing"]}, "2026-03-27": {"s1": ["pierre", "lulu", "gigi", "purdey", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "moses", "teddy", "coco", "bing"]}, "2026-03-30": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-03-31": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-01": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "old coco"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-02": {"s1": ["pierre", "lulu", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-03": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-04-06": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-04-07": {"s1": ["pierre", "lulu"], "s2": ["balu&maya"], "s3": ["clover", "yopo", "neo", "moses"], "s4": ["cato", "flaco", "lara&river"]}, "2026-04-08": {"s1": ["pierre", "lulu", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-09": {"s1": ["pierre", "lulu", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-10": {"s1": ["pierre", "lulu", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["jimmy", "aspen", "nellie", "clover", "neo", "yopo", "old coco"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-13": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-14": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-15": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "old coco"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-16": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-17": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-20": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-21": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-22": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "old coco"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-23": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-24": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-27": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-28": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-29": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo", "old coco"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-04-30": {"s1": ["pierre", "lulu", "gigi", "snoopy"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "moses", "teddy", "coco", "bing", "flaco"]}, "2026-05-01": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-05-04": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-05": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-06": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-07": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-08": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-11": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-12": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-13": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-14": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-15": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-18": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-19": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-20": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-21": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-22": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-25": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-26": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-27": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-28": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-05-29": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-01": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-02": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-03": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-04": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-05": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-08": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-09": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-10": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-11": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-12": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-15": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-16": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-17": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-18": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-19": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-22": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-23": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-24": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-25": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-26": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-29": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-06-30": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-01": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-02": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-03": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-06": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-07": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-08": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-09": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-10": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-13": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-14": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-15": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-16": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-17": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-20": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-21": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-22": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-23": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-24": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-27": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-28": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-29": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-30": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-07-31": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-03": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-04": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-05": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-06": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-07": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-10": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-11": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-12": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-13": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-14": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-17": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-18": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-19": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-20": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-21": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-24": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-25": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-26": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-27": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-28": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-08-31": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-01": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-02": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-03": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-04": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-07": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-08": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-09": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-10": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-11": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-14": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-15": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-16": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-17": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-18": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-21": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-22": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-23": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-24": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-25": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-28": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-29": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-09-30": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-01": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-02": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-05": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-06": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-07": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-08": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-09": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-12": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-13": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-14": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-15": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-16": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-19": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-20": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-21": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-22": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-23": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-26": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-27": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-28": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-29": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-10-30": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-02": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-03": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-04": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-05": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-06": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-09": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-10": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-11": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-12": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-13": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-16": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-17": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-18": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-19": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-20": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-23": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-24": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-25": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-26": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-27": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-11-30": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-01": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-02": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-03": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-04": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-07": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-08": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-09": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-10": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-11": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-14": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-15": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-16": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-17": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-18": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-21": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-22": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-23": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-24": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-25": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-28": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-29": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-30": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "old coco", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-12-31": {"s1": ["chapo", "lulu", "gigi", "snoopy", "purdey"], "s2": ["rey", "balu&maya", "pistacho"], "s3": ["aspen", "nellie", "clover", "jimmy", "bob", "neo", "yopo"], "s4": ["cato", "lara&river", "flaco", "teddy", "moses"]}, "2026-03-07": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-03-08": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-03-14": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-03-15": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-03-21": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-03-22": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-03-28": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-03-29": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-04-04": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-04-05": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-04-11": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-04-12": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-04-18": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-04-19": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-04-25": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-04-26": {"s1": [], "s2": [], "s3": [], "s4": []}, "2026-03-01": {"s1": [], "s2": [], "s3": [], "s4": []}};
+
+var BD = {"2026-01-06": ["stanley"], "2026-01-07": ["stanley"], "2026-01-08": ["stanley"], "2026-01-09": ["stanley"], "2026-01-10": ["stanley"], "2026-02-06": ["stanley"], "2026-03-04": ["stanley", "yopo"], "2026-03-07": ["stanley", "balu&maya"], "2026-03-08": ["stanley", "balu&maya"], "2026-03-09": ["stanley", "balu&maya"], "2026-03-10": ["stanley", "balu&maya"], "2026-03-11": ["stanley", "balu&maya"], "2026-03-12": ["stanley", "balu&maya"], "2026-03-13": ["stanley", "jimmy", "balu&maya"], "2026-03-14": ["stanley", "jimmy", "balu&maya"], "2026-03-15": ["stanley", "jimmy", "balu&maya"], "2026-03-16": ["stanley", "jimmy", "balu&maya"], "2026-03-17": ["stanley", "balu&maya"], "2026-03-22": ["stanley", "lara&river"], "2026-03-24": ["stanley", "bing"], "2026-03-25": ["stanley", "bing", "snoopy"], "2026-03-26": ["stanley", "bing", "snoopy"], "2026-03-27": ["stanley", "bing", "snoopy"], "2026-03-28": ["stanley", "bing", "snoopy"], "2026-03-29": ["stanley", "bing", "snoopy"], "2026-03-30": ["stanley", "bing", "snoopy"], "2026-03-31": ["stanley", "bing", "snoopy"], "2026-04-01": ["stanley", "snoopy"], "2026-04-02": ["stanley", "snoopy"], "2026-04-03": ["stanley", "aspen"], "2026-04-04": ["stanley", "aspen"], "2026-04-05": ["stanley", "aspen"], "2026-04-06": ["stanley", "aspen"], "2026-04-07": ["stanley", "aspen"], "2026-04-08": ["stanley", "aspen"], "2026-04-09": ["stanley", "aspen"], "2026-04-10": ["stanley", "aspen"], "2026-04-11": ["stanley", "aspen"], "2026-04-12": ["stanley"], "2026-04-13": ["stanley"], "2026-04-14": ["stanley", "indy"], "2026-04-15": ["stanley", "old coco", "indy", "coco"], "2026-04-16": ["stanley", "old coco", "indy", "coco"], "2026-04-17": ["stanley", "old coco", "cato", "indy", "coco"], "2026-04-18": ["stanley", "old coco", "cato", "indy", "bing", "coco"], "2026-04-19": ["stanley", "old coco", "cato", "indy", "bing", "coco"], "2026-04-20": ["stanley", "old coco", "cato", "indy", "coco"], "2026-04-21": ["stanley", "indy"], "2026-04-22": ["stanley", "indy"], "2026-04-23": ["stanley", "indy", "balu&maya"], "2026-04-24": ["stanley", "indy", "teddy", "balu&maya"], "2026-04-25": ["stanley", "indy", "teddy", "balu&maya"], "2026-04-26": ["stanley", "indy", "teddy", "balu&maya"], "2026-04-27": ["stanley", "indy", "teddy", "balu&maya"], "2026-04-28": ["stanley", "balu&maya"], "2026-04-29": ["stanley", "pistacho", "balu&maya"], "2026-04-30": ["stanley", "pistacho", "clover", "balu&maya"], "2026-05-01": ["stanley", "pistacho", "clover", "balu&maya"], "2026-05-02": ["stanley", "balu", "maya", "pistacho", "clover"], "2026-05-03": ["stanley", "bing", "pistacho", "clover"], "2026-05-04": ["stanley", "bing", "pistacho", "clover"], "2026-05-05": ["stanley", "bing", "pistacho"], "2026-05-06": ["stanley", "bing", "pistacho"], "2026-05-07": ["stanley", "pistacho"], "2026-05-08": ["stanley", "pistacho"], "2026-05-09": ["stanley", "pistacho"], "2026-05-10": ["stanley", "pistacho"], "2026-05-11": ["stanley", "pistacho"], "2026-05-12": ["stanley", "pistacho"], "2026-05-13": ["stanley", "pistacho"], "2026-05-14": ["stanley", "pistacho", "clover"], "2026-05-15": ["stanley", "pistacho", "clover"], "2026-05-16": ["stanley", "pistacho", "clover"], "2026-05-17": ["stanley", "pistacho", "clover"], "2026-05-18": ["stanley", "pistacho"], "2026-05-19": ["stanley", "pistacho"], "2026-05-20": ["stanley", "pistacho"], "2026-05-21": ["stanley", "pistacho"], "2026-05-22": ["stanley", "pistacho"], "2026-05-23": ["stanley"], "2026-05-24": ["stanley"], "2026-05-25": ["stanley"], "2026-05-26": ["stanley"], "2026-05-27": ["stanley"], "2026-05-28": ["stanley"], "2026-05-29": ["stanley"], "2026-05-30": ["stanley"], "2026-05-31": ["stanley"], "2026-06-01": ["stanley"], "2026-06-02": ["stanley"], "2026-06-03": ["stanley"], "2026-06-04": ["stanley"], "2026-06-05": ["stanley"], "2026-06-06": ["stanley"], "2026-06-07": ["stanley"], "2026-06-08": ["stanley"], "2026-06-09": ["stanley"], "2026-06-10": ["stanley"], "2026-06-11": ["stanley"], "2026-06-12": ["stanley"], "2026-06-13": ["stanley"], "2026-06-14": ["stanley"], "2026-06-15": ["stanley"], "2026-06-16": ["stanley"], "2026-06-17": ["stanley"], "2026-06-18": ["stanley"], "2026-06-19": ["stanley"], "2026-06-20": ["stanley"], "2026-06-21": ["stanley"], "2026-06-22": ["stanley"], "2026-06-23": ["stanley"], "2026-06-24": ["stanley"], "2026-06-25": ["stanley"], "2026-06-26": ["stanley"], "2026-06-27": ["stanley"], "2026-06-28": ["stanley"], "2026-06-29": ["stanley"], "2026-06-30": ["stanley"], "2026-07-01": ["stanley"], "2026-07-02": ["stanley"], "2026-07-03": ["stanley"], "2026-07-04": ["stanley"], "2026-07-05": ["stanley"], "2026-07-06": ["stanley"], "2026-07-07": ["stanley"], "2026-07-08": ["stanley"], "2026-07-09": ["stanley"], "2026-07-10": ["stanley"], "2026-07-11": ["stanley"], "2026-07-12": ["stanley"], "2026-07-13": ["stanley"], "2026-07-14": ["stanley"], "2026-07-15": ["stanley"], "2026-07-16": ["stanley"], "2026-07-17": ["stanley"], "2026-07-18": ["stanley"], "2026-07-19": ["stanley"], "2026-07-20": ["stanley"], "2026-07-21": ["stanley"], "2026-07-22": ["stanley"], "2026-07-23": ["stanley"], "2026-07-24": ["stanley"], "2026-07-25": ["stanley"], "2026-07-26": ["stanley"], "2026-07-27": ["stanley"], "2026-07-28": ["stanley"], "2026-07-29": ["stanley"], "2026-07-30": ["stanley"], "2026-07-31": ["stanley"], "2026-08-01": ["stanley"], "2026-08-02": ["stanley"], "2026-08-03": ["stanley"], "2026-08-04": ["stanley"], "2026-08-05": ["stanley"], "2026-08-06": ["stanley"], "2026-08-07": ["stanley"], "2026-08-08": ["stanley"], "2026-08-09": ["stanley"], "2026-08-10": ["stanley"], "2026-08-11": ["stanley"], "2026-08-12": ["stanley"], "2026-08-13": ["stanley"], "2026-08-14": ["stanley"], "2026-08-15": ["stanley"], "2026-08-16": ["stanley"], "2026-08-17": ["stanley"], "2026-08-18": ["stanley"], "2026-08-19": ["stanley"], "2026-08-20": ["stanley"], "2026-08-21": ["stanley"], "2026-08-22": ["stanley"], "2026-08-23": ["stanley"], "2026-08-24": ["stanley"], "2026-08-25": ["stanley"], "2026-08-26": ["stanley"], "2026-08-27": ["stanley"], "2026-08-28": ["stanley"], "2026-08-29": ["stanley"], "2026-08-30": ["stanley"], "2026-08-31": ["stanley"], "2026-09-01": ["stanley"], "2026-09-02": ["stanley"], "2026-09-03": ["stanley"], "2026-09-04": ["stanley"], "2026-09-05": ["stanley"], "2026-09-06": ["stanley"], "2026-09-07": ["stanley"], "2026-09-08": ["stanley"], "2026-09-09": ["stanley"], "2026-09-10": ["stanley"], "2026-09-11": ["stanley"], "2026-09-12": ["stanley"], "2026-09-13": ["stanley"], "2026-09-14": ["stanley"], "2026-09-15": ["stanley"], "2026-09-16": ["stanley"], "2026-09-17": ["stanley"], "2026-09-18": ["stanley"], "2026-09-19": ["stanley"], "2026-09-20": ["stanley"], "2026-09-21": ["stanley"], "2026-09-22": ["stanley"], "2026-09-23": ["stanley"], "2026-09-24": ["stanley"], "2026-09-25": ["stanley"], "2026-09-26": ["stanley"], "2026-09-27": ["stanley"], "2026-09-28": ["stanley"], "2026-09-29": ["stanley"], "2026-09-30": ["stanley"], "2026-10-01": ["stanley"], "2026-10-02": ["stanley"], "2026-10-03": ["stanley"], "2026-10-04": ["stanley"], "2026-10-05": ["stanley"], "2026-10-06": ["stanley"], "2026-10-07": ["stanley"], "2026-10-08": ["stanley"], "2026-10-09": ["stanley"], "2026-10-10": ["stanley"], "2026-10-11": ["stanley"], "2026-10-12": ["stanley"], "2026-10-13": ["stanley"], "2026-10-14": ["stanley"], "2026-10-15": ["stanley"], "2026-10-16": ["stanley"], "2026-10-17": ["stanley"], "2026-10-18": ["stanley"], "2026-10-19": ["stanley"], "2026-10-20": ["stanley"], "2026-10-21": ["stanley"], "2026-10-22": ["stanley"], "2026-10-23": ["stanley"], "2026-10-24": ["stanley"], "2026-10-25": ["stanley"], "2026-10-26": ["stanley"], "2026-10-27": ["stanley"], "2026-10-28": ["stanley"], "2026-10-29": ["stanley"], "2026-10-30": ["stanley"], "2026-10-31": ["stanley"], "2026-11-01": ["stanley"], "2026-11-02": ["stanley"], "2026-11-03": ["stanley"], "2026-11-04": ["stanley"], "2026-11-05": ["stanley"], "2026-11-06": ["stanley"], "2026-11-07": ["stanley"], "2026-11-08": ["stanley"], "2026-11-09": ["stanley"], "2026-11-10": ["stanley"], "2026-11-11": ["stanley"], "2026-11-12": ["stanley"], "2026-11-13": ["stanley"], "2026-11-14": ["stanley"], "2026-11-15": ["stanley"], "2026-11-16": ["stanley"], "2026-11-17": ["stanley"], "2026-11-18": ["stanley"], "2026-11-19": ["stanley"], "2026-11-20": ["stanley"], "2026-11-21": ["stanley"], "2026-11-22": ["stanley"], "2026-11-23": ["stanley"], "2026-11-24": ["stanley"], "2026-11-25": ["stanley"], "2026-11-26": ["stanley"], "2026-11-27": ["stanley"], "2026-11-28": ["stanley"], "2026-11-29": ["stanley"], "2026-11-30": ["stanley"], "2026-12-01": ["stanley"], "2026-12-02": ["stanley"], "2026-12-03": ["stanley"], "2026-12-04": ["stanley"], "2026-12-05": ["stanley"], "2026-12-06": ["stanley"], "2026-12-07": ["stanley"], "2026-12-08": ["stanley"], "2026-12-09": ["stanley"], "2026-12-10": ["stanley"], "2026-12-11": ["stanley"], "2026-12-12": ["stanley"], "2026-12-13": ["stanley"], "2026-12-14": ["stanley"], "2026-12-15": ["stanley"], "2026-12-16": ["stanley"], "2026-12-17": ["stanley"], "2026-12-18": ["stanley"], "2026-12-19": ["stanley"], "2026-12-20": ["stanley"], "2026-12-21": ["stanley"], "2026-12-22": ["stanley"], "2026-12-23": ["stanley"], "2026-12-24": ["stanley"], "2026-12-25": ["stanley"], "2026-12-26": ["stanley"], "2026-12-27": ["stanley"], "2026-12-28": ["stanley"], "2026-12-29": ["stanley"], "2026-12-31": ["stanley"], "2026-03-05": ["stanley", "yopo", "balu&maya"], "2026-03-06": ["stanley", "yopo", "balu&maya"], "2026-01-11": ["stanley"], "2026-01-12": ["stanley"], "2026-01-13": ["stanley"], "2026-01-14": ["stanley"], "2026-01-15": ["stanley"], "2026-01-16": ["stanley"], "2026-01-17": ["stanley"], "2026-01-18": ["stanley"], "2026-01-19": ["stanley"], "2026-01-20": ["stanley"], "2026-01-21": ["stanley"], "2026-01-22": ["stanley"], "2026-01-23": ["stanley"], "2026-01-24": ["stanley"], "2026-01-25": ["stanley"], "2026-01-26": ["stanley"], "2026-01-27": ["stanley"], "2026-01-28": ["stanley"], "2026-01-29": ["stanley"], "2026-01-30": ["stanley"], "2026-01-31": ["stanley"], "2026-02-01": ["stanley"], "2026-02-02": ["stanley"], "2026-02-03": ["stanley"], "2026-02-04": ["stanley"], "2026-02-05": ["stanley"], "2026-02-07": ["stanley"], "2026-02-08": ["stanley"], "2026-02-09": ["stanley"], "2026-02-10": ["stanley"], "2026-02-11": ["stanley"], "2026-02-12": ["stanley"], "2026-02-13": ["stanley"], "2026-02-14": ["stanley"], "2026-02-15": ["stanley"], "2026-02-16": ["stanley"], "2026-02-17": ["stanley"], "2026-02-18": ["stanley"], "2026-02-19": ["stanley"], "2026-02-20": ["stanley"], "2026-02-21": ["stanley"], "2026-02-22": ["stanley"], "2026-02-23": ["stanley"], "2026-02-24": ["stanley"], "2026-02-25": ["stanley"], "2026-02-26": ["stanley"], "2026-02-27": ["stanley"], "2026-02-28": ["stanley"], "2026-03-01": ["stanley"], "2026-03-02": ["stanley"], "2026-03-03": ["stanley"], "2026-03-18": ["stanley"], "2026-03-19": ["stanley"], "2026-03-20": ["stanley"], "2026-03-21": ["stanley"], "2026-03-23": ["stanley"], "2026-12-30": ["stanley"]};
+
+// Auto-generar estructura para 2027 si no existe
+(function(){
+  var startYear=2027;
+  var d2=new Date(startYear,0,1);
+  while(d2.getFullYear()===startYear){
+    var dk2=fd(d2);
+    var dow2=d2.getDay();
+    if(dow2!==0&&dow2!==6){
+      if(!WD[dk2])WD[dk2]={s1:[],s2:[],s3:[],s4:[]};
+    }
+    if(!BD[dk2])BD[dk2]=[];
+    d2.setDate(d2.getDate()+1);
+  }
+})();
+
+var DP = {
+  "chapo":{n:"Chapo"},"gigi":{n:"Gigi"},"pistacho":{n:"Pistacho"},"lulu":{n:"Lulu"},
+  "snoopy":{n:"Snoopy"},"clover":{n:"Clover"},"neo":{n:"Neo"},"bing":{n:"Bing"},
+  "indy":{n:"Indy"},"cato":{n:"Cato"},"balu&maya":{n:"Balu & Maya"},
+  "purdey":{n:"Purdey"},"rey":{n:"Rey"},"nellie":{n:"Nellie",sp:true},
+  "bob":{n:"Bob"},"aspen":{n:"Aspen"},"jimmy":{n:"Jimmy"},
+  "old coco":{n:"Old Coco"},"coco":{n:"Coco"},
+  "yopo":{n:"Yopo"},"flaco":{n:"Flaco"},
+  "lara&river":{n:"Lara & River"},"teddy":{n:"Teddy"},
+  "moses":{n:"Moses"},
+  "stanley":{n:"Stanley",note:"Larga estancia"},
+  "pierre":{n:"Pierre"}
+,
+  "balu":{n:"Balu"},"maya":{n:"Maya"},"lara":{n:"Lara"},"river":{n:"River"},"pistachio":{n:"Pistachio"}
+};
+
+// Client groups (one invoice per client)
+var CLIENTS = [
+  {id:"chapo",      label:"Chapo",         dogs:["chapo"]},
+  {id:"gigi",       label:"Gigi",          dogs:["gigi"]},
+  {id:"pistacho",   label:"Pistacho",      dogs:["pistacho"]},
+  {id:"lulu",       label:"Lulu",          dogs:["lulu"]},
+  {id:"snoopy",     label:"Snoopy",        dogs:["snoopy"]},
+  {id:"clover",     label:"Clover",        dogs:["clover"]},
+  {id:"neo",        label:"Neo",           dogs:["neo"]},
+  {id:"bing",       label:"Bing",          dogs:["bing"]},
+  {id:"indy",       label:"Indy",          dogs:["indy"]},
+  {id:"cato",       label:"Cato",          dogs:["cato"]},
+  {id:"balu_maya",  label:"Balu & Maya",   dogs:["balu&maya"],   pair:true},
+  {id:"purdey",     label:"Purdey",        dogs:["purdey"]},
+  {id:"rey",        label:"Rey",           dogs:["rey"]},
+  {id:"nellie",     label:"Nellie",        dogs:["nellie"],      special:true},
+  {id:"bob",        label:"Bob",           dogs:["bob"]},
+  {id:"aspen",      label:"Aspen",         dogs:["aspen"]},
+  {id:"jimmy",      label:"Jimmy",         dogs:["jimmy"]},
+  {id:"coco",       label:"Coco",          dogs:["coco"]},
+  {id:"old_coco",   label:"Old Coco",      dogs:["old coco"]},
+  {id:"yopo",       label:"Yopo",          dogs:["yopo"]},
+  {id:"flaco",      label:"Flaco",         dogs:["flaco"]},
+  {id:"lara_river", label:"Lara & River",  dogs:["lara&river"],  pair:true},
+  {id:"teddy",      label:"Teddy",         dogs:["teddy"]},
+  {id:"moses",      label:"Moses",         dogs:["moses"]},
+  {id:"stanley",    label:"Stanley",       dogs:["stanley"],     longstay:true},
+  {id:"pierre",     label:"Pierre",        dogs:["pierre"]}
+];
+
+var DS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+var MN=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+var PAL=[["#f59e0b","#451a03"],["#10b981","#022c22"],["#3b82f6","#172554"],["#e879f9","#4a044e"],["#f97316","#431407"],["#06b6d4","#083344"],["#84cc16","#1a2e05"],["#8b5cf6","#2e1065"],["#ec4899","#500724"],["#14b8a6","#042f2e"],["#f43f5e","#4c0519"],["#6366f1","#1e1b4b"]];
+
+/* helpers */
+function p2(n){return n<10?"0"+n:""+n;}
+function fd(d){return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate());}
+function fm(d){return d.getFullYear()+"-"+p2(d.getMonth()+1);}
+function getToday(){var d=new Date();return fd(d);}
+function dn(id){return(DP[id]&&DP[id].n)?DP[id].n:(id.charAt(0).toUpperCase()+id.slice(1));}
+function hn(id){var h=0;for(var i=0;i<id.length;i++)h=(h*31+id.charCodeAt(i))&0xffff;return h;}
+function pc(id){return PAL[hn(id)%PAL.length];}
+function getDP(id){return DP[id]||CUSTOM_DOGS[id]||{n:id.charAt(0).toUpperCase()+id.slice(1)};}
+function getDn(id){return getDP(id).n||dn(id);}
+function isMar(dk){return dk>="2026-03-04";}
+
+var CUSTOM_DAYS={};
+var CUSTOM_BD={};
+var INACTIVE_DOGS={};
+var CUSTOM_DOGS={};
+var EXPENSES=[];
+
+/* DEFAULT_WEEK: horario semanal perpetuo (fallback cuando WD no tiene datos)
+   Se usa para cualquier fecha futura más allá del WD hardcoded.
+   El hermano puede sobreescribirlo con el Planificador (CUSTOM_DAYS). */
+var DEFAULT_WEEK={
+  1:{s1:["pierre","lulu","gigi","snoopy"],s2:["rey","balu&maya","pistacho"],s3:["aspen","nellie","clover","jimmy","old coco","neo","yopo"],s4:["cato","lara&river","flaco","moses","teddy","coco","bing"]},
+  2:{s1:["pierre","lulu","gigi","snoopy"],s2:["rey","balu&maya","pistacho"],s3:["aspen","nellie","clover","jimmy","bob","neo","yopo"],s4:["cato","lara&river","flaco","moses","teddy","coco","bing"]},
+  3:{s1:["pierre","lulu","gigi","snoopy"],s2:["rey","balu&maya","pistacho"],s3:["aspen","nellie","clover","jimmy","bob","neo","yopo","old coco"],s4:["cato","lara&river","flaco","moses","teddy","coco","bing"]},
+  4:{s1:["pierre","lulu","gigi","snoopy"],s2:["rey","balu&maya","pistacho"],s3:["aspen","nellie","clover","jimmy","bob","neo","yopo"],s4:["cato","lara&river","flaco","moses","teddy","coco","bing"]},
+  5:{s1:["pierre","lulu","gigi","snoopy"],s2:["rey","balu&maya","pistacho"],s3:["aspen","nellie","clover","jimmy","old coco","neo","yopo"],s4:["cato","lara&river","flaco","moses","teddy","coco","bing"]},
+  6:{s1:[],s2:[],s3:[],s4:[]},
+  0:{s1:[],s2:[],s3:[],s4:[]}
+};
+
+function filterInactive(arr){return(arr||[]).filter(function(d){return!INACTIVE_DOGS[d];});}
+function getSh(dk){
+  var base=CUSTOM_DAYS[dk]||WD[dk];
+  if(!base){
+    // Fallback: usar DEFAULT_WEEK basado en día de la semana
+    var dow=new Date(dk).getDay();
+    base=DEFAULT_WEEK[dow]||{s1:[],s2:[],s3:[],s4:[]};
+  }
+  return{s1:filterInactive(base.s1),s2:filterInactive(base.s2),s3:filterInactive(base.s3),s4:filterInactive(base.s4)};
+}
+function getBD(dk){
+  var base=(CUSTOM_BD[dk]!==undefined)?CUSTOM_BD[dk]:(BD[dk]||[]);
+  return base.filter(function(d){return!INACTIVE_DOGS[d];});
+}
+function t1(sh){var m={};((sh.s1||[]).concat(sh.s2||[])).forEach(function(d){m[d]=1;});return Object.keys(m);}
+function t2(sh){return(sh.s3||[]).slice();}
+function t3(sh){return(sh.s4||[]).slice();}
+function allD(sh){var m={};t1(sh).concat(t2(sh)).concat(t3(sh)).forEach(function(d){m[d]=1;});return Object.keys(m);}
+
+/* State */
+var TODAY=getToday();
+var curView="shift"; // shift | boarding | summary | settings
+var att={};
+var shiftDone={};
+
+function saveS(){
+  try{
+    localStorage.setItem("gz2_att",JSON.stringify(att));
+    localStorage.setItem("gz2_cbd",JSON.stringify(CUSTOM_BD));
+    localStorage.setItem("gz2_cd",JSON.stringify(CUSTOM_DAYS));
+    localStorage.setItem("gz2_exp",JSON.stringify(EXPENSES));
+    localStorage.setItem("gz2_cdog",JSON.stringify(CUSTOM_DOGS));
+    localStorage.setItem("gz2_inact",JSON.stringify(INACTIVE_DOGS));
+    localStorage.setItem("gz2m_shift_done",JSON.stringify(shiftDone));
+  }catch(e){/* storage full */}
+  // Push to sync server
+  if(typeof syncPush==="function")syncPush();
+}
+function loadS(){
+  try{
+    var a=localStorage.getItem("gz2_att");if(a)att=JSON.parse(a);
+    var cbd=localStorage.getItem("gz2_cbd");if(cbd)CUSTOM_BD=JSON.parse(cbd);
+    var cdays=localStorage.getItem("gz2_cd");if(cdays)CUSTOM_DAYS=JSON.parse(cdays);
+    var exp=localStorage.getItem("gz2_exp");if(exp)EXPENSES=JSON.parse(exp);
+    var cd=localStorage.getItem("gz2_cdog");if(cd)CUSTOM_DOGS=JSON.parse(cd);
+    var inact=localStorage.getItem("gz2_inact");if(inact)INACTIVE_DOGS=JSON.parse(inact);
+    var sd=localStorage.getItem("gz2m_shift_done");if(sd)shiftDone=JSON.parse(sd);
+  }catch(e){}
+}
+
+function detectShift(){
+  var h=new Date().getHours();
+  var m=new Date().getMinutes();
+  var mins=h*60+m;
+  if(mins<600) return "T1";   // before 10:00
+  if(mins<750) return "T1";   // 10:00-12:29 → T1 just finished
+  if(mins<900) return "T2";   // 12:30-14:59
+  if(mins<1080) return "T3";  // 15:00-17:59
+  return "BRD";               // 18:00+
+}
+
+function getShiftDogs(dk,shiftId){
+  var sh=getSh(dk);
+  if(shiftId==="T1") return t1(sh);
+  if(shiftId==="T2") return t2(sh);
+  if(shiftId==="T3") return t3(sh);
+  return [];
+}
+
+function getShiftLabel(sid){
+  if(sid==="T1") return{name:"TURNO 1",time:"8:15 – 9:30",ico:"🐾"};
+  if(sid==="T2") return{name:"TURNO 2",time:"11:20 – 12:30",ico:"🐾"};
+  if(sid==="T3") return{name:"TURNO 3",time:"13:30 – 14:45",ico:"🐾"};
+  return{name:"BOARDING",time:"Noche",ico:"🏠"};
+}
+
+function fmtDate(dk){
+  var d=new Date(dk);
+  return DS[d.getDay()]+" "+d.getDate()+" "+MN[d.getMonth()]+" "+d.getFullYear();
+}
+
+/* ═══ RENDER ═══ */
+function render(){
+  TODAY=getToday();
+  var h="";
+  // Header
+  h+='<div class="hdr">';
+  h+='<div class="hdr-date">📅 '+fmtDate(TODAY)+'</div>';
+  h+='<div class="hdr-sync" style="background:#f0fdf4;color:#15803d;border:1px solid #86efac">🟢 OK</div>';
+  h+='</div>';
+  // View
+  h+='<div class="view" id="view-area">';
+  if(curView==="shift") h+=renderShift();
+  else if(curView==="planner") h+=renderPlanner();
+  else if(curView==="boarding") h+=renderBoarding();
+  else if(curView==="summary") h+=renderSummary();
+  else if(curView==="settings") h+=renderSettings();
+  h+='</div>';
+  // FAB → Planner shortcut
+  h+='<button class="fab" id="fab-planner">📋</button>';
+  // Nav
+  h+='<div class="nav">';
+  h+='<button class="nav-btn'+(curView==="shift"?" on":"")+'" data-v="shift"><span class="nav-ico">🐾</span>Turno</button>';
+  h+='<button class="nav-btn'+(curView==="planner"?" on":"")+'" data-v="planner"><span class="nav-ico">📋</span>Planificar</button>';
+  h+='<button class="nav-btn'+(curView==="boarding"?" on":"")+'" data-v="boarding"><span class="nav-ico">🏠</span>Boarding</button>';
+  h+='<button class="nav-btn'+(curView==="summary"?" on":"")+'" data-v="summary"><span class="nav-ico">📊</span>Resumen</button>';
+  h+='<button class="nav-btn'+(curView==="settings"?" on":"")+'" data-v="settings"><span class="nav-ico">⚙️</span>Datos</button>';
+  h+='</div>';
+  document.getElementById("app").innerHTML=h;
+  attachListeners();
+}
+
+/* === PLANNER VIEW === */
+var planDate=null;
+var planAddTarget=null; // which shift the add-modal is open for
+
+function getPlanDate(){
+  if(!planDate)planDate=getToday();
+  return planDate;
+}
+function planNav(dir){
+  var d=new Date(getPlanDate());
+  d.setDate(d.getDate()+dir);
+  planDate=fd(d);
+  render();
+}
+function getPlanShiftDogs(dk,sid){
+  var sh=getSh(dk);
+  if(sid==="T1") return t1(sh);
+  if(sid==="T2") return t2(sh);
+  if(sid==="T3") return t3(sh);
+  if(sid==="s1") return (sh.s1||[]).slice();
+  if(sid==="s2") return (sh.s2||[]).slice();
+  if(sid==="s3") return (sh.s3||[]).slice();
+  if(sid==="s4") return (sh.s4||[]).slice();
+  return [];
+}
+function ensureCustomDay(dk){
+  if(!CUSTOM_DAYS[dk]){
+    var base=WD[dk]||{s1:[],s2:[],s3:[],s4:[]};
+    CUSTOM_DAYS[dk]={s1:(base.s1||[]).slice(),s2:(base.s2||[]).slice(),s3:(base.s3||[]).slice(),s4:(base.s4||[]).slice()};
+  }
+}
+function addDogToShift(dogId,shiftId,dk){
+  ensureCustomDay(dk);
+  // T1→s1, T2→s3, T3→s4
+  var real=shiftId==="T1"?"s1":shiftId==="T2"?"s3":shiftId==="T3"?"s4":shiftId;
+  if(CUSTOM_DAYS[dk][real].indexOf(dogId)<0){
+    CUSTOM_DAYS[dk][real].push(dogId);
+  }
+  saveS();render();
+}
+function removeDogFromShift(dogId,shiftId,dk){
+  ensureCustomDay(dk);
+  if(shiftId==="T1"){
+    // Remove from both s1 and s2
+    CUSTOM_DAYS[dk].s1=CUSTOM_DAYS[dk].s1.filter(function(d){return d!==dogId;});
+    CUSTOM_DAYS[dk].s2=CUSTOM_DAYS[dk].s2.filter(function(d){return d!==dogId;});
+  } else {
+    var real=shiftId==="T2"?"s3":shiftId==="T3"?"s4":shiftId;
+    CUSTOM_DAYS[dk][real]=CUSTOM_DAYS[dk][real].filter(function(d){return d!==dogId;});
+  }
+  saveS();render();
+}
+function addNewDog(name){
+  var id=name.toLowerCase().trim();
+  if(!id)return;
+  CUSTOM_DOGS[id]={n:name.trim().charAt(0).toUpperCase()+name.trim().slice(1)};
+  localStorage.setItem("gz2_cdog",JSON.stringify(CUSTOM_DOGS));
+  saveS();
+}
+function getAllDogIds(){
+  var m={};
+  Object.keys(DP).forEach(function(k){m[k]=1;});
+  Object.keys(CUSTOM_DOGS).forEach(function(k){m[k]=1;});
+  return Object.keys(m).filter(function(k){return!INACTIVE_DOGS[k];});
+}
+function countDogShifts(dogId,dk){
+  var c=0;
+  ["T1","T2","T3"].forEach(function(t){
+    if(getPlanShiftDogs(dk,t).indexOf(dogId)>=0)c++;
+  });
+  return c;
+}
+
+function renderPlanner(){
+  var dk=getPlanDate();
+  var isToday=(dk===getToday());
+  var d=new Date(dk);
+  var h='';
+  // Day navigator
+  h+='<div class="plan-day-nav">';
+  h+='<button class="pdn-btn" id="plan-prev">◀</button>';
+  h+='<div style="text-align:center">';
+  h+='<div class="pdn-label">'+(isToday?'📅 HOY — ':'')+DS[d.getDay()]+' '+d.getDate()+' '+MN[d.getMonth()]+'</div>';
+  h+='<div class="pdn-sub">Toca + para añadir perros</div>';
+  h+='</div>';
+  h+='<button class="pdn-btn" id="plan-next">▶</button>';
+  h+='</div>';
+
+  // 3 Turnos: T1(s1+s2), T2(s3), T3(s4)
+  var shifts=[
+    {id:"T1",name:"TURNO 1",time:"8:15 – 9:30"},
+    {id:"T2",name:"TURNO 2",time:"11:20 – 12:30"},
+    {id:"T3",name:"TURNO 3",time:"13:30 – 14:45"}
+  ];
+  var usedDogs={};
+  shifts.forEach(function(s){
+    var dogs=getPlanShiftDogs(dk,s.id);
+    dogs.forEach(function(dd){usedDogs[dd]=(usedDogs[dd]||0)+1;});
+    h+='<div class="plan-shift">';
+    h+='<div class="plan-shift-hdr"><span class="psh-name">'+s.name+'</span><span class="psh-time">'+s.time+'</span></div>';
+    h+='<div class="plan-shift-body">';
+    dogs.forEach(function(dd){
+      var c=pc(dd);
+      var cnt=countDogShifts(dd,dk);
+      h+='<div class="plan-chip" style="background:'+c[0]+';color:'+c[1]+'">';
+      h+=getDn(dd);
+      if(cnt>1) h+='<span class="plan-dbl-badge">x'+cnt+'</span>';
+      h+='<button class="pc-x" data-dog="'+dd+'" data-shift="'+s.id+'" data-dk="'+dk+'">×</button>';
+      h+='</div>';
+    });
+    h+='<button class="plan-add-btn" data-shift="'+s.id+'" data-dk="'+dk+'">+</button>';
+    h+='</div></div>';
+  });
+
+  // Pool of available dogs
+  var allDogs=getAllDogIds();
+  var poolDogs=allDogs.filter(function(dd){return!usedDogs[dd];});
+  poolDogs.sort(function(a,b){return getDn(a).localeCompare(getDn(b));});
+  h+='<div class="plan-pool">';
+  h+='<div class="plan-pool-title">🐕 PERROS DISPONIBLES ('+poolDogs.length+')</div>';
+  h+='<div class="plan-pool-dogs">';
+  poolDogs.forEach(function(dd){
+    var c=pc(dd);
+    h+='<div class="plan-pool-chip" data-dog="'+dd+'" style="border-color:'+c[0]+';color:'+c[0]+'">';
+    h+=getDn(dd);
+    h+='</div>';
+  });
+  h+='<button class="plan-new-btn" id="plan-new-dog">+ Nuevo perro</button>';
+  h+='</div></div>';
+
+  return h;
+}
+
+function showPlanAddModal(shiftId,dk){
+  // Build list of dogs not in this shift
+  var current=getPlanShiftDogs(dk,shiftId);
+  var curMap={};current.forEach(function(d){curMap[d]=1;});
+  var all=getAllDogIds().filter(function(d){return!curMap[d];});
+  all.sort(function(a,b){return getDn(a).localeCompare(getDn(b));});
+
+  var el=document.createElement('div');
+  el.className='plan-modal';
+  el.id='plan-modal-bg';
+  var sh='';
+  sh+='<div class="plan-modal-sheet">';
+  var sLabel={T1:'Turno 1',T2:'Turno 2',T3:'Turno 3'};
+  sh+='<div class="plan-modal-title"><span>Añadir a '+sLabel[shiftId]+'</span><button class="modal-close" id="plan-modal-close">✕</button></div>';
+  sh+='<div class="plan-pool-dogs" style="max-height:50vh;overflow-y:auto">';
+  all.forEach(function(dd){
+    var c=pc(dd);
+    sh+='<div class="plan-pool-chip plan-modal-pick" data-dog="'+dd+'" data-shift="'+shiftId+'" data-dk="'+dk+'" style="border-color:'+c[0]+';color:'+c[0]+';margin-bottom:2px">';
+    sh+=getDn(dd);
+    sh+='</div>';
+  });
+  sh+='</div></div>';
+  el.innerHTML=sh;
+  document.body.appendChild(el);
+
+  // Listeners
+  document.getElementById('plan-modal-close').onclick=function(){el.remove();};
+  el.onclick=function(e){if(e.target===el)el.remove();};
+  el.querySelectorAll('.plan-modal-pick').forEach(function(chip){
+    chip.onclick=function(){
+      var dog=this.getAttribute('data-dog');
+      var sid=this.getAttribute('data-shift');
+      var ddk=this.getAttribute('data-dk');
+      el.remove();
+      addDogToShift(dog,sid,ddk);
+    };
+  });
+}
+
+function showNewDogModal(){
+  var el=document.createElement('div');
+  el.className='plan-modal';
+  el.id='plan-newdog-bg';
+  var sh='';
+  sh+='<div class="plan-modal-sheet">';
+  sh+='<div class="plan-modal-title"><span>🐕 Nuevo Perro</span><button class="modal-close" id="newdog-close">✕</button></div>';
+  sh+='<input type="text" class="plan-input" id="newdog-name" placeholder="Nombre del perro" autocomplete="off">';
+  sh+='<button class="plan-confirm" id="newdog-save">✓ Crear Perro</button>';
+  sh+='</div>';
+  el.innerHTML=sh;
+  document.body.appendChild(el);
+
+  document.getElementById('newdog-close').onclick=function(){el.remove();};
+  el.onclick=function(e){if(e.target===el)el.remove();};
+  document.getElementById('newdog-save').onclick=function(){
+    var name=document.getElementById('newdog-name').value.trim();
+    if(!name){alert('Escribe un nombre.');return;}
+    addNewDog(name);
+    el.remove();
+    render();
+  };
+  setTimeout(function(){document.getElementById('newdog-name').focus();},100);
+}
+
+/* === SHIFT VIEW === */
+var activeShift=null;
+var shiftDate=null;
+function getShiftDate(){if(!shiftDate)shiftDate=getToday();return shiftDate;}
+function shiftNav(dir){
+  var d=new Date(getShiftDate());
+  d.setDate(d.getDate()+dir);
+  var nd=fd(d);
+  if(nd>getToday())return; // no future
+  shiftDate=nd;
+  render();
+}
+function renderShift(){
+  if(!activeShift) activeShift=detectShift();
+  if(activeShift==="BRD"){curView="boarding";return renderBoarding();}
+  var dk=getShiftDate();
+  var isToday=(dk===getToday());
+  var isFuture=(dk>getToday());
+  var info=getShiftLabel(activeShift);
+  var dogs=getShiftDogs(dk,activeShift);
+  var doneKey=dk+"|"+activeShift;
+  var isDone=shiftDone[doneKey];
+  var h='';
+  // Day navigator
+  h+='<div class="shift-day-nav">';
+  h+='<button class="sdn-btn" id="shift-prev">◀</button>';
+  h+='<div style="text-align:center">';
+  if(isToday){
+    h+='<div style="font-size:14px;font-weight:700;color:#1c1c1a">📅 HOY</div>';
+  } else {
+    var dd=new Date(dk);
+    h+='<div style="font-size:14px;font-weight:700;color:#92400e">'+DS[dd.getDay()]+' '+dd.getDate()+' '+MN[dd.getMonth()]+'</div>';
+  }
+  h+='</div>';
+  h+='<button class="sdn-btn" id="shift-next"'+(isToday?' disabled':'')+'>▶</button>';
+  h+='</div>';
+  if(!isToday){
+    h+='<div class="past-banner">📅 DÍA ANTERIOR — Confirma los paseos pendientes</div>';
+  }
+  h+='<div class="shift-hdr">';
+  h+='<div class="shift-name">'+info.ico+" "+info.name+'</div>';
+  h+='<div class="shift-time">'+info.time+'</div>';
+  h+='</div>';
+  if(!dogs.length){
+    h+='<div style="text-align:center;padding:30px;color:#888;font-size:14px">No hay perros en este turno</div>';
+  } else {
+    dogs.forEach(function(d){
+      var key=dk+"|"+activeShift+"|"+d;
+      var isConfirmed=(att[key]===true);
+      var isAbsent=(att[key]===false);
+      var isPending=(!isConfirmed&&!isAbsent);
+      var c=pc(d);
+      var rowClass="dog-row";
+      if(isAbsent) rowClass+=" absent";
+      else if(isPending) rowClass+=" pending";
+      h+='<div class="'+rowClass+'" data-dog="'+d+'">';
+      h+='<div class="dog-av" style="background:'+c[0]+';color:'+c[1]+'">'+getDn(d).charAt(0)+'</div>';
+      h+='<div class="dog-name">'+getDn(d)+(isPending?' <span style="font-size:10px;color:#b45309">⏳</span>':'')+'</div>';
+      var dblCount=countDogShifts(d,dk);
+      h+='<div class="dog-btns">';
+      h+='<button class="btn-dbl'+(dblCount>1?' on':'')+'" data-dog="'+d+'" data-dk="'+dk+'">'+(dblCount>1?'x'+dblCount:'x2')+'</button>';
+      h+='<button class="btn-ok'+(isConfirmed?" confirmed":"")+(isAbsent?" off":"")+'" data-dog="'+d+'" data-action="ok">✓</button>';
+      h+='<button class="btn-no'+(isAbsent?" on":"")+'" data-dog="'+d+'" data-action="no">✗</button>';
+      h+='</div></div>';
+    });
+  }
+  // TODOS PASEADOS button
+  var pending=0;
+  dogs.forEach(function(d){if(att[dk+"|"+activeShift+"|"+d]!==true)pending++;});
+  if(!isDone && dogs.length && pending>0){
+    h+='<button class="btn-listo" id="btn-todos-paseados" style="background:linear-gradient(135deg,#10b981,#059669);margin-bottom:12px;height:60px;font-size:16px;">✓ TODOS PASEADOS ('+pending+')</button>';
+  }
+  // LISTO button
+  if(isDone){
+    h+='<button class="btn-listo saved" id="btn-listo">✅ TURNO COMPLETADO · Toca para ir al siguiente</button>';
+  } else {
+    h+='<button class="btn-listo" id="btn-listo" style="background:linear-gradient(135deg,#6366f1,#4f46e5);font-size:16px;height:56px">→ SIGUIENTE TURNO</button>';
+  }
+  // Day progress
+  h+='<div class="sect-title">Progreso del día</div>';
+  var shifts=["T1","T2","T3"];
+  shifts.forEach(function(sid){
+    var sk=dk+"|"+sid;
+    var done2=shiftDone[sk];
+    var sdogs=getShiftDogs(dk,sid);
+    var cnt=sdogs.length;
+    var absent=0;
+    sdogs.forEach(function(dd){if(att[dk+"|"+sid+"|"+dd]===false)absent++;});
+    h+='<div class="day-summary" data-shift="'+sid+'">';
+    h+='<div class="ds-icon">'+(done2?"✅":"⏳")+'</div>';
+    h+='<div class="ds-label">'+getShiftLabel(sid).name+' ('+getShiftLabel(sid).time+')</div>';
+    if(done2){
+      h+='<div class="ds-status" style="background:#f0fdf4;color:#15803d">'+(cnt-absent)+'/'+cnt+'</div>';
+    } else {
+      h+='<div class="ds-status" style="background:#fffbeb;color:#b45309">Pendiente</div>';
+    }
+    h+='</div>';
+  });
+  // Boarding summary
+  var brd=getBD(dk);
+  h+='<div class="day-summary" data-shift="BRD">';
+  h+='<div class="ds-icon">🏠</div>';
+  h+='<div class="ds-label">Boarding</div>';
+  h+='<div class="ds-status" style="background:#f5f3ff;color:#7c3aed">'+brd.length+' perros</div>';
+  h+='</div>';
+  return h;
+}
+
+/* === BOARDING VIEW === */
+var boardingDate=null;
+function getBoardingDate(){if(!boardingDate)boardingDate=getToday();return boardingDate;}
+function boardingNav(dir){
+  var d=new Date(getBoardingDate());
+  d.setDate(d.getDate()+dir);
+  var nd=fd(d);
+  if(nd>getToday())return;
+  boardingDate=nd;
+  render();
+}
+function renderBoarding(){
+  var dk=getBoardingDate();
+  var isToday=(dk===getToday());
+  var baseBrd=getBD(dk);
+  var doneKey=dk+"|BRD";
+  var isDone=shiftDone[doneKey];
+  var allIds=Object.keys(DP).filter(function(id){return!INACTIVE_DOGS[id];});
+  var brdMap={};baseBrd.forEach(function(d){brdMap[d]=1;});
+  var h='';
+  // Day navigator
+  h+='<div class="shift-day-nav">';
+  h+='<button class="sdn-btn" id="brd-prev">◀</button>';
+  h+='<div style="text-align:center">';
+  if(isToday){
+    h+='<div style="font-size:14px;font-weight:700;color:#1c1c1a">🏠 HOY</div>';
+  } else {
+    var dd=new Date(dk);
+    h+='<div style="font-size:14px;font-weight:700;color:#92400e">'+DS[dd.getDay()]+' '+dd.getDate()+' '+MN[dd.getMonth()]+'</div>';
+  }
+  h+='</div>';
+  h+='<button class="sdn-btn" id="brd-next"'+(isToday?' disabled':'')+'>▶</button>';
+  h+='</div>';
+  if(!isToday){
+    h+='<div class="past-banner">📅 DÍA ANTERIOR — Confirma el boarding pendiente</div>';
+  }
+  h+='<div class="shift-hdr">';
+  h+='<div class="shift-name">🏠 BOARDING</div>';
+  h+='<div class="shift-time">¿Quién se queda'+(isToday?' esta noche':'')+' ?</div>';
+  h+='</div>';
+  if(baseBrd.length){
+    h+='<div class="sect-title">Boarding base ('+baseBrd.length+')</div>';
+    baseBrd.forEach(function(d){
+      var bkey=dk+"|BRD|"+d;
+      var isOff=(att[bkey]===false);
+      var c=pc(d);
+      h+='<div class="brd-dog">';
+      h+='<div class="dog-av" style="background:'+c[0]+';color:'+c[1]+';width:36px;height:36px;font-size:15px">'+getDn(d).charAt(0)+'</div>';
+      h+='<div style="flex:1;font-size:14px;font-weight:700">'+getDn(d)+'</div>';
+      h+='<button class="brd-toggle'+(isOff?'':' on')+'" data-dog="'+d+'" data-dk="'+dk+'"></button>';
+      h+='</div>';
+    });
+  }
+  var others=allIds.filter(function(id){return!brdMap[id];});
+  if(others.length){
+    h+='<div class="sect-title">Otros perros</div>';
+    others.forEach(function(d){
+      var bkey=dk+"|BRD|"+d;
+      var isOn=(att[bkey]===true);
+      var c=pc(d);
+      h+='<div class="brd-dog">';
+      h+='<div class="dog-av" style="background:'+c[0]+';color:'+c[1]+';width:36px;height:36px;font-size:15px">'+getDn(d).charAt(0)+'</div>';
+      h+='<div style="flex:1;font-size:14px;font-weight:700">'+getDn(d)+'</div>';
+      h+='<button class="brd-toggle-extra'+(isOn?' on':'')+'" data-dog="'+d+'" data-dk="'+dk+'"></button>';
+      h+='</div>';
+    });
+  }
+  if(isDone){
+    h+='<button class="btn-listo saved" id="btn-listo-brd" style="background:linear-gradient(135deg,#c4b5fd,#a78bfa);color:#5b21b6">✅ GUARDADO · Pulsa para actualizar</button>';
+  } else {
+    h+='<button class="btn-listo" id="btn-listo-brd" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">🏠 LISTO · GUARDAR</button>';
+  }
+  return h;
+}
+
+/* === SUMMARY VIEW === */
+function renderSummary(){
+  var dk=TODAY;
+  var h='<div class="shift-hdr">';
+  h+='<div class="shift-name">📊 RESUMEN DEL DÍA</div>';
+  h+='<div class="shift-time">'+fmtDate(dk)+'</div>';
+  h+='</div>';
+  var shifts=["T1","T2","T3"];
+  shifts.forEach(function(sid){
+    var sk=dk+"|"+sid;
+    var done2=shiftDone[sk];
+    var sdogs=getShiftDogs(dk,sid);
+    var cnt=sdogs.length;
+    var absent=0;
+    sdogs.forEach(function(dd){if(att[dk+"|"+sid+"|"+dd]===false)absent++;});
+    h+='<div class="day-summary" data-shift="'+sid+'">';
+    h+='<div class="ds-icon">'+(done2?"✅":"⏳")+'</div>';
+    h+='<div class="ds-label">'+getShiftLabel(sid).name+' ('+getShiftLabel(sid).time+')</div>';
+    if(done2){
+      h+='<div class="ds-status" style="background:#f0fdf4;color:#15803d">'+(cnt-absent)+'/'+cnt+'</div>';
+    } else {
+      h+='<div class="ds-status" style="background:#fffbeb;color:#b45309">Pendiente</div>';
+    }
+    h+='</div>';
+  });
+  var brd=getBD(dk);
+  var brdDone=shiftDone[dk+"|BRD"];
+  h+='<div class="day-summary" data-shift="BRD">';
+  h+='<div class="ds-icon">'+(brdDone?"✅":"🏠")+'</div>';
+  h+='<div class="ds-label">Boarding</div>';
+  h+='<div class="ds-status" style="background:#f5f3ff;color:#7c3aed">'+brd.length+' perros</div>';
+  h+='</div>';
+  // Week overview
+  h+='<div class="sect-title">Esta semana</div>';
+  var d=new Date(dk);
+  var day=d.getDay();
+  var monday=new Date(d);monday.setDate(d.getDate()-((day===0?7:day)-1));
+  h+='<div class="week-row">';
+  for(var wi=0;wi<5;wi++){
+    var wd=new Date(monday);wd.setDate(monday.getDate()+wi);
+    var wdk=fd(wd);
+    var isToday2=(wdk===dk);
+    var allDone2=shiftDone[wdk+"|T1"]&&shiftDone[wdk+"|T2"]&&shiftDone[wdk+"|T3"];
+    var isPast=(wdk<dk);
+    h+='<div class="week-day'+(allDone2?" done":"")+(isToday2?" today":"")+'" data-dk="'+wdk+'" style="cursor:'+(isPast||isToday2?'pointer':'default')+'">';
+    h+=DS[wd.getDay()].charAt(0)+'<br>'+(allDone2?"✅":"⏳");
+    h+='</div>';
+  }
+  h+='</div>';
+  // Expenses today
+  var todayExp=EXPENSES.filter(function(e){return e.date===dk;});
+  if(todayExp.length){
+    h+='<div class="sect-title">Gastos hoy</div>';
+    todayExp.forEach(function(e){
+      h+='<div style="padding:8px 14px;margin-bottom:4px;border-radius:10px;background:#fff;border:1px solid #e8e3dc;display:flex;justify-content:space-between">';
+      h+='<span style="font-size:13px;color:#aaa">'+(e.cat||"Otro")+'</span>';
+      h+='<span style="font-size:14px;font-weight:700;color:#b45309">£'+e.amount+'</span>';
+      h+='</div>';
+    });
+  }
+  // FACTURADO button
+  h+='<div style="margin-top:20px;padding-top:14px;border-top:1.5px dashed #e8e3dc">';
+  h+='<button class="btn-facturado" id="btn-facturado">💰 TODO FACTURADO — Archivar y limpiar</button>';
+  h+='<div style="text-align:center;font-size:11px;color:#aaa;margin-top:4px">Pulsa cuando hayas hecho las facturas del periodo</div>';
+  h+='</div>';
+  return h;
+}
+
+/* === SETTINGS VIEW === */
+function renderSettings(){
+  var h='<div class="shift-hdr">';
+  h+='<div class="shift-name">⚙️ DATOS & SYNC</div>';
+  h+='<div class="shift-time">Exportar e importar datos</div>';
+  h+='</div>';
+  h+='<button class="settings-btn" id="btn-export" style="background:#f0fdf4;color:#15803d;border-color:#86efac;font-size:14px;padding:14px">📤 Exportar Backup JSON</button>';
+  h+='<label for="inp-import" class="settings-btn" style="background:#fffbeb;color:#b45309;border-color:#fde68a;font-size:14px;padding:14px;display:block;cursor:pointer">📂 Importar Backup JSON</label>';
+  h+='<input type="file" id="inp-import" accept=".json" style="display:none">';
+  h+='<div style="margin-top:16px;padding:14px;border-radius:12px;background:#fff;border:1px solid #e8e3dc">';
+  h+='<div style="font-size:13px;font-weight:700;margin-bottom:8px">📊 Estadísticas</div>';
+  h+='<div style="font-size:12px;color:#888;margin-bottom:4px">Registros att: '+Object.keys(att).length+'</div>';
+  h+='<div style="font-size:12px;color:#888;margin-bottom:4px">Gastos: '+EXPENSES.length+'</div>';
+  h+='<div style="font-size:12px;color:#888">Turnos completados: '+Object.keys(shiftDone).length+'</div>';
+  h+='</div>';
+  h+='<button class="settings-btn" id="btn-clear" style="background:#fef2f2;color:#dc2626;border-color:#fecaca;margin-top:12px">🗑️ Borrar todos los datos locales</button>';
+  h+='<div style="text-align:center;margin-top:20px;font-size:10px;color:#555">CayeDJB Mobile V1.0 · 2026</div>';
+  return h;
+}
+
+/* ═══ EXPENSE MODAL ═══ */
+var expModalOpen=false;
+var expCat="";
+var expPayer="CEO";
+
+function renderExpenseModal(){
+  if(!expModalOpen) return "";
+  var h='<div class="modal-bg" id="modal-bg">';
+  h+='<div class="modal">';
+  h+='<div class="modal-title"><span>💸 Gasto Rápido</span><button class="modal-close" id="exp-close">✕</button></div>';
+  h+='<input type="number" class="input-amount" id="exp-amount" placeholder="0" inputmode="decimal">';
+  h+='<div class="cat-chips">';
+  var cats=[
+    {id:"car",lb:"🚗 Car"},{id:"parking",lb:"🅿️ Park"},{id:"supply",lb:"🧤 Supply"},
+    {id:"salary",lb:"💰 Salary"},{id:"care",lb:"🐕 Care"},{id:"other",lb:"📱 Other"}
+  ];
+  cats.forEach(function(c){
+    h+='<div class="cat-chip'+(expCat===c.id?" on":"")+'" data-cat="'+c.id+'">'+c.lb+'</div>';
+  });
+  h+='</div>';
+  h+='<div class="payer-row">';
+  h+='<div class="payer-btn'+(expPayer==="CEO"?" on":"")+'" data-payer="CEO">CEO</div>';
+  h+='<div class="payer-btn'+(expPayer==="Empresa"?" on":"")+'" data-payer="Empresa">Empresa</div>';
+  h+='</div>';
+  h+='<button class="btn-listo" id="btn-save-exp" style="background:linear-gradient(135deg,#f59e0b,#d97706);margin-top:10px;height:56px;font-size:17px">💾 GUARDAR GASTO</button>';
+  h+='</div></div>';
+  return h;
+}
+
+/* ═══ LISTENERS ═══ */
+function attachListeners(){
+  // Nav
+  document.querySelectorAll(".nav-btn").forEach(function(btn){
+    btn.onclick=function(){
+      curView=this.getAttribute("data-v");
+      activeShift=null;
+      render();
+    };
+  });
+  // FAB → Planner
+  var fab=document.getElementById("fab-planner");
+  if(fab)fab.onclick=function(){
+    planDate=getToday();
+    curView="planner";
+    render();
+  };
+  // Shift day navigation
+  var shiftPrev=document.getElementById("shift-prev");
+  if(shiftPrev)shiftPrev.onclick=function(){shiftNav(-1);};
+  var shiftNext=document.getElementById("shift-next");
+  if(shiftNext)shiftNext.onclick=function(){shiftNav(1);};
+  // Planner listeners
+  var planPrev=document.getElementById("plan-prev");
+  if(planPrev)planPrev.onclick=function(){planNav(-1);};
+  var planNext=document.getElementById("plan-next");
+  if(planNext)planNext.onclick=function(){planNav(1);};
+  // Planner: remove chip
+  document.querySelectorAll(".pc-x").forEach(function(btn){
+    btn.onclick=function(e){
+      e.stopPropagation();
+      var dog=this.getAttribute("data-dog");
+      var sid=this.getAttribute("data-shift");
+      var ddk=this.getAttribute("data-dk");
+      removeDogFromShift(dog,sid,ddk);
+    };
+  });
+  // Planner: add button per shift
+  document.querySelectorAll(".plan-add-btn").forEach(function(btn){
+    btn.onclick=function(){
+      var sid=this.getAttribute("data-shift");
+      var ddk=this.getAttribute("data-dk");
+      showPlanAddModal(sid,ddk);
+    };
+  });
+  // Planner: pool chip click → show which shift to add to
+  document.querySelectorAll(".plan-pool-chip:not(.plan-modal-pick)").forEach(function(chip){
+    chip.onclick=function(){
+      var dog=this.getAttribute("data-dog");
+      if(!dog)return;
+      var dk=getPlanDate();
+      var el=document.createElement('div');
+      el.className='plan-modal';
+      el.id='plan-quickadd-bg';
+      var sh='<div class="plan-modal-sheet" style="padding-bottom:30px">';
+      sh+='<div class="plan-modal-title"><span>Añadir '+getDn(dog)+'</span><button class="modal-close" id="quickadd-close">✕</button></div>';
+      sh+='<div style="display:flex;flex-direction:column;gap:8px">';
+      [{id:"T1",n:"Turno 1 · 8:15"},{id:"T2",n:"Turno 2 · 11:20"},{id:"T3",n:"Turno 3 · 13:30"}].forEach(function(s){
+        sh+='<button class="plan-confirm quickadd-pick" data-shift="'+s.id+'" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">'+s.n+'</button>';
+      });
+      sh+='</div></div>';
+      el.innerHTML=sh;
+      document.body.appendChild(el);
+      document.getElementById('quickadd-close').onclick=function(){el.remove();};
+      el.onclick=function(e){if(e.target===el)el.remove();};
+      el.querySelectorAll('.quickadd-pick').forEach(function(b){
+        b.onclick=function(){
+          var sid=this.getAttribute('data-shift');
+          el.remove();
+          addDogToShift(dog,sid,dk);
+        };
+      });
+    };
+  });
+  // Planner: new dog button
+  var newDogBtn=document.getElementById("plan-new-dog");
+  if(newDogBtn)newDogBtn.onclick=function(){showNewDogModal();};
+  // Shift: x2 Double walk button
+  document.querySelectorAll(".btn-dbl").forEach(function(btn){
+    btn.onclick=function(){
+      var dog=this.getAttribute("data-dog");
+      var dk=this.getAttribute("data-dk");
+      var currentShifts={};
+      ["T1","T2","T3"].forEach(function(t){
+        if(getPlanShiftDogs(dk,t).indexOf(dog)>=0) currentShifts[t]=true;
+      });
+      var available=[{id:"T1",n:"Turno 1 · 8:15"},{id:"T2",n:"Turno 2 · 11:20"},{id:"T3",n:"Turno 3 · 13:30"}].filter(function(s){return!currentShifts[s.id];});
+      if(!available.length){alert(getDn(dog)+" ya está en los 3 turnos.");return;}
+      var el=document.createElement('div');
+      el.className='plan-modal';
+      var sh='<div class="plan-modal-sheet" style="padding-bottom:30px">';
+      sh+='<div class="plan-modal-title"><span>x2 '+getDn(dog)+'</span><button class="modal-close" id="dbl-close">✕</button></div>';
+      sh+='<div style="font-size:13px;color:#888;margin-bottom:10px">¿En qué otro turno paseó?</div>';
+      sh+='<div style="display:flex;flex-direction:column;gap:8px">';
+      available.forEach(function(s){
+        sh+='<button class="plan-confirm dbl-pick" data-shift="'+s.id+'" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">'+s.n+'</button>';
+      });
+      sh+='</div></div>';
+      el.innerHTML=sh;
+      document.body.appendChild(el);
+      document.getElementById('dbl-close').onclick=function(){el.remove();};
+      el.onclick=function(e){if(e.target===el)el.remove();};
+      el.querySelectorAll('.dbl-pick').forEach(function(b){
+        b.onclick=function(){
+          var sid=this.getAttribute('data-shift');
+          el.remove();
+          addDogToShift(dog,sid,dk);
+          att[dk+"|"+sid+"|"+dog]=true;
+          att[dk+"|"+dog]=true;
+          saveS();render();
+        };
+      });
+    };
+  });
+  // Shift dog buttons
+  document.querySelectorAll(".btn-ok").forEach(function(btn){
+    btn.onclick=function(){
+      var d=this.getAttribute("data-dog");
+      var dk=getShiftDate();
+      var key=dk+"|"+activeShift+"|"+d;
+      att[key]=true;
+      att[dk+"|"+d]=true;
+      saveS();
+      render();
+    };
+  });
+  document.querySelectorAll(".btn-no").forEach(function(btn){
+    btn.onclick=function(){
+      var d=this.getAttribute("data-dog");
+      var dk=getShiftDate();
+      var key=dk+"|"+activeShift+"|"+d;
+      att[key]=false;
+      att[dk+"|"+d]=false;
+      saveS();
+      render();
+    };
+  });
+  // TODOS PASEADOS
+  var btnTodos=document.getElementById("btn-todos-paseados");
+  if(btnTodos)btnTodos.onclick=function(){
+    var dk=getShiftDate();
+    var dogs=getShiftDogs(dk,activeShift);
+    dogs.forEach(function(d){
+      var key=dk+"|"+activeShift+"|"+d;
+      if(att[key]!==false) att[key]=true;
+    });
+    shiftDone[dk+"|"+activeShift]=true;
+    dogs.forEach(function(d){
+      var mkey=dk+"|"+activeShift+"|"+d;
+      var pcKey=dk+"|"+d;
+      if(att[mkey]===false){ att[pcKey]=false; } else { att[pcKey]=true; }
+    });
+    saveS();
+    render();
+  };
+  // LISTO
+  var listoBtn=document.getElementById("btn-listo");
+  if(listoBtn)listoBtn.onclick=function(){
+    var dk=getShiftDate();
+    var doneKey=dk+"|"+activeShift;
+    shiftDone[doneKey]=true;
+    var dogs=getShiftDogs(dk,activeShift);
+    dogs.forEach(function(d){
+      var mkey=dk+"|"+activeShift+"|"+d;
+      var pcKey=dk+"|"+d;
+      if(att[mkey]===false){
+        att[pcKey]=false;
+      } else {
+        att[pcKey]=true;
+      }
+    });
+    saveS();
+    render();
+  };
+  // Boarding day navigation
+  var brdPrev=document.getElementById("brd-prev");
+  if(brdPrev)brdPrev.onclick=function(){boardingNav(-1);};
+  var brdNext=document.getElementById("brd-next");
+  if(brdNext)brdNext.onclick=function(){boardingNav(1);};
+  // LISTO boarding
+  var listoBrd=document.getElementById("btn-listo-brd");
+  if(listoBrd)listoBrd.onclick=function(){
+    var dk=getBoardingDate();
+    shiftDone[dk+"|BRD"]=true;
+    saveS();render();
+  };
+  // Boarding toggles (base)
+  document.querySelectorAll(".brd-toggle").forEach(function(btn){
+    btn.onclick=function(){
+      var d=this.getAttribute("data-dog");
+      var dk=this.getAttribute("data-dk")||getBoardingDate();
+      var bkey=dk+"|BRD|"+d;
+      if(att[bkey]===false){delete att[bkey];}
+      else{att[bkey]=false;}
+      saveS();
+      render();
+    };
+  });
+  // Boarding toggles (extra)
+  document.querySelectorAll(".brd-toggle-extra").forEach(function(btn){
+    btn.onclick=function(){
+      var d=this.getAttribute("data-dog");
+      var dk=this.getAttribute("data-dk")||getBoardingDate();
+      var bkey=dk+"|BRD|"+d;
+      if(att[bkey]===true){delete att[bkey];}
+      else{att[bkey]=true;}
+      if(!CUSTOM_BD[dk])CUSTOM_BD[dk]=getBD(dk).slice();
+      if(att[bkey]===true&&CUSTOM_BD[dk].indexOf(d)<0)CUSTOM_BD[dk].push(d);
+      if(att[bkey]!==true)CUSTOM_BD[dk]=CUSTOM_BD[dk].filter(function(x){return x!==d;});
+      saveS();
+      render();
+    };
+  });
+  // Day summary → go to shift
+  document.querySelectorAll(".day-summary").forEach(function(el){
+    el.onclick=function(){
+      var sid=this.getAttribute("data-shift");
+      if(sid==="BRD"){curView="boarding";}
+      else{curView="shift";activeShift=sid;}
+      render();
+    };
+  });
+  // Week day click → navigate to that day's shift view
+  document.querySelectorAll(".week-day").forEach(function(el){
+    el.onclick=function(){
+      var dk=this.getAttribute("data-dk");
+      if(dk && dk<=getToday()){
+        shiftDate=dk;
+        activeShift="T1";
+        curView="shift";
+        render();
+      }
+    };
+  });
+  // Settings buttons
+  var expBtn=document.getElementById("btn-export");
+  if(expBtn)expBtn.onclick=exportBackup;
+  var impInp=document.getElementById("inp-import");
+  if(impInp)impInp.onchange=function(){if(this.files[0])importBackup(this.files[0]);};
+  var clrBtn=document.getElementById("btn-clear");
+  if(clrBtn)clrBtn.onclick=function(){
+    if(!confirm("¿Borrar TODOS los datos locales? Esta acción no se puede deshacer."))return;
+    localStorage.clear();att={};shiftDone={};EXPENSES=[];CUSTOM_BD={};CUSTOM_DOGS={};INACTIVE_DOGS={};
+    render();alert("✅ Datos borrados.");
+  };
+  // FACTURADO button
+  var factBtn=document.getElementById("btn-facturado");
+  if(factBtn)factBtn.onclick=facturar;
+}
+
+function facturar(){
+  var today=getToday();
+  // Count entries to archive
+  var attCount=0,sdCount=0,bdCount=0;
+  Object.keys(att).forEach(function(k){if(k.substring(0,10)<today)attCount++;});
+  Object.keys(shiftDone).forEach(function(k){if(k.substring(0,10)<today)sdCount++;});
+  Object.keys(CUSTOM_BD).forEach(function(k){if(k<today)bdCount++;});
+  var total=attCount+sdCount+bdCount;
+  if(total===0){alert("✅ No hay datos antiguos que archivar.");return;}
+  var msg="💰 ¿TODO FACTURADO?\n\n";
+  msg+="Se van a archivar "+total+" registros anteriores a hoy:\n";
+  msg+="• "+attCount+" registros de asistencia\n";
+  msg+="• "+sdCount+" registros de turnos\n";
+  msg+="• "+bdCount+" registros de boarding\n\n";
+  msg+="Los datos de HOY se conservan.\n";
+  msg+="Esta acción NO se puede deshacer.";
+  if(!confirm(msg))return;
+  // Purge old att entries
+  Object.keys(att).forEach(function(k){if(k.substring(0,10)<today)delete att[k];});
+  // Purge old shiftDone entries
+  Object.keys(shiftDone).forEach(function(k){if(k.substring(0,10)<today)delete shiftDone[k];});
+  // Purge old CUSTOM_BD entries
+  Object.keys(CUSTOM_BD).forEach(function(k){if(k<today)delete CUSTOM_BD[k];});
+  // Purge old notification flags
+  Object.keys(localStorage).forEach(function(k){
+    if(k.indexOf("gz2m_notified_")===0){
+      var datePart=k.replace("gz2m_notified_","").substring(0,10);
+      if(datePart<today)localStorage.removeItem(k);
+    }
+  });
+  saveS();
+  syncPush();
+  alert("✅ Datos archivados. Sistema limpio y listo para el nuevo periodo.");
+  render();
+}
+
+function attachExpenseListeners(){
+  var closeBtn=document.getElementById("exp-close");
+  var bg=document.getElementById("modal-bg");
+  function closeModal(){expModalOpen=false;var el=document.querySelector(".modal-bg");if(el)el.remove();}
+  if(closeBtn)closeBtn.onclick=closeModal;
+  if(bg)bg.onclick=function(e){if(e.target===bg)closeModal();};
+  document.querySelectorAll(".cat-chip").forEach(function(chip){
+    chip.onclick=function(){
+      expCat=this.getAttribute("data-cat");
+      document.querySelectorAll(".cat-chip").forEach(function(c){c.classList.remove("on");});
+      this.classList.add("on");
+    };
+  });
+  document.querySelectorAll(".payer-btn").forEach(function(btn){
+    btn.onclick=function(){
+      expPayer=this.getAttribute("data-payer");
+      document.querySelectorAll(".payer-btn").forEach(function(b){b.classList.remove("on");});
+      this.classList.add("on");
+    };
+  });
+  var saveExp=document.getElementById("btn-save-exp");
+  if(saveExp)saveExp.onclick=function(){
+    var amtEl=document.getElementById("exp-amount");
+    var amt=parseFloat(amtEl?amtEl.value:0);
+    if(!amt||amt<=0){alert("Introduce un importe.");return;}
+    if(amt>500){if(!confirm("Importe de £"+amt+" es alto. ¿Confirmar?"))return;}
+    EXPENSES.push({
+      id:"exp_"+Date.now(),
+      date:TODAY,
+      cat:expCat||"other",
+      amount:amt,
+      paidBy:expPayer,
+      desc:""
+    });
+    saveS();
+    expModalOpen=false;
+    var el=document.querySelector(".modal-bg");if(el)el.remove();
+    render();
+  };
+}
+
+/* ═══ BACKUP ═══ */
+function exportBackup(){
+  var data={
+    att:att,
+    CUSTOM_BD:CUSTOM_BD,
+    EXPENSES:EXPENSES,
+    CUSTOM_DOGS:CUSTOM_DOGS,
+    INACTIVE_DOGS:INACTIVE_DOGS,
+    shiftDone:shiftDone,
+    _exported:new Date().toISOString(),
+    _version:"CayeDJB-mobile-backup-v1",
+    _source:"mobile"
+  };
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;a.download="CayeDJB_mobile_"+TODAY.replace(/-/g,"")+".json";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  alert("✅ Backup exportado.");
+}
+
+function importBackup(file){
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var data=JSON.parse(ev.target.result);
+      if(!data._version){alert("Archivo no válido.");return;}
+      if(!confirm("¿Restaurar backup del "+data._exported+"?"))return;
+      if(data.att)att=data.att;
+      if(data.CUSTOM_BD)CUSTOM_BD=data.CUSTOM_BD;
+      if(data.EXPENSES)EXPENSES=data.EXPENSES;
+      if(data.CUSTOM_DOGS)CUSTOM_DOGS=data.CUSTOM_DOGS;
+      if(data.INACTIVE_DOGS)INACTIVE_DOGS=data.INACTIVE_DOGS;
+      if(data.shiftDone)shiftDone=data.shiftDone;
+      saveS();render();
+      alert("✅ Backup restaurado.");
+    }catch(e){alert("Error: "+e.message);}
+  };
+  reader.readAsText(file);
+}
+
+/* ═══ NOTIFICATIONS ═══ */
+function checkNotifications(){
+  var h=new Date().getHours(),m=new Date().getMinutes();
+  var nowMin=h*60+m;
+  var dk=getToday();
+  var shifts=[
+    {id:"T1",notifyAt:570,label:"Turno 1 terminado"},
+    {id:"T2",notifyAt:750,label:"Turno 2 terminado"},
+    {id:"T3",notifyAt:885,label:"Turno 3 terminado"}
+  ];
+  shifts.forEach(function(s){
+    var doneKey2="gz2m_notified_"+dk+"_"+s.id;
+    var shiftDoneKey2=dk+"|"+s.id;
+    if(nowMin>=s.notifyAt&&!localStorage.getItem(doneKey2)&&!shiftDone[shiftDoneKey2]){
+      if(Notification.permission==="granted"){
+        new Notification("🐾 "+s.label,{body:"¿Qué perros vinieron? Confirma en la app.",icon:"🐾"});
+      }
+      localStorage.setItem(doneKey2,"1");
+    }
+  });
+  // 17:00 recap — any shift still pending
+  var recapKey="gz2m_notified_"+dk+"_recap";
+  if(nowMin>=1020&&!localStorage.getItem(recapKey)){
+    var anyPending=!shiftDone[dk+"|T1"]||!shiftDone[dk+"|T2"]||!shiftDone[dk+"|T3"];
+    if(anyPending){
+      if(Notification.permission==="granted"){
+        new Notification("📋 Confirma los paseos de hoy",{body:"Tienes turnos sin completar. Abre la app."});
+      }
+    }
+    localStorage.setItem(recapKey,"1");
+  }
+  // 21:00 boarding
+  if(nowMin>=1260&&!localStorage.getItem("gz2m_notified_"+dk+"_BRD")&&!shiftDone[dk+"|BRD"]){
+    if(Notification.permission==="granted"){
+      new Notification("🏠 Confirma Boarding",{body:"¿Quién se queda esta noche?"});
+    }
+    localStorage.setItem("gz2m_notified_"+dk+"_BRD","1");
+  }
+}
+setInterval(checkNotifications,60000);
+
+/* ═══ PWA — SELF CACHING ═══ */
+if("serviceWorker" in navigator){
+  var currentUrl=window.location.href.split('?')[0].split('#')[0];
+  var swCode='const CACHE="cayedjb-mobile-v4";'+
+  'self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.add("'+currentUrl+'")));self.skipWaiting();});'+
+  'self.addEventListener("activate",e=>{e.waitUntil(clients.claim());});'+
+  'self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;'+
+  'e.respondWith(fetch(e.request).then(res=>{const rc=res.clone();caches.open(CACHE).then(c=>c.put(e.request,rc));return res;}).catch(()=>caches.match(e.request).then(res=>res||caches.match("'+currentUrl+'"))));});';
+  var swBlob=new Blob([swCode],{type:"application/javascript"});
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(function(){});
+}
+if("Notification" in window&&Notification.permission==="default"){
+  Notification.requestPermission();
+}
+
+/* ═══ SYNC — Google Sheets Cloud ═══ */
+
+// ⚠️ PEGAR AQUÍ TU URL DE GOOGLE APPS SCRIPT (ver SETUP_SYNC_GUIDE.md)
+var CLOUD_SYNC_URL="https://script.google.com/macros/s/AKfycby_GtltbcWOqAEcqiXvVjH__WsVTIGDRm9azMhYQj1A1TBI1xI3fuRVJhzvt5jR0s5N/exec";
+
+// Fallback: servidor local (para desarrollo)
+var LOCAL_SYNC_URL="";
+(function(){
+  var loc=window.location;
+  if(loc.protocol==="http:"||loc.protocol==="https:"){
+    LOCAL_SYNC_URL=loc.protocol+"//"+loc.host+"/api/state";
+  }
+})();
+
+function getSyncUrl(){return CLOUD_SYNC_URL||LOCAL_SYNC_URL;}
+var syncStatus="unknown";
+var offlineQueue=[];
+
+// Cargar cola offline de localStorage
+try{
+  var oq=localStorage.getItem("gz2m_offline_queue");
+  if(oq)offlineQueue=JSON.parse(oq);
+}catch(e){}
+
+function saveOfflineQueue(){
+  try{localStorage.setItem("gz2m_offline_queue",JSON.stringify(offlineQueue));}catch(e){}
+}
+
+function syncPush(){
+  var url=getSyncUrl();
+  if(!url){syncStatus="offline";updateSyncBadge();return;}
+  syncStatus="syncing";updateSyncBadge();
+  // Prune att to last 90 days for cloud sync (localStorage keeps all)
+  var pruneDate=new Date();
+  pruneDate.setDate(pruneDate.getDate()-90);
+  var pruneDk=fd(pruneDate);
+  var prunedAtt={};
+  Object.keys(att).forEach(function(k){
+    var datePart=k.substring(0,10);
+    if(datePart>=pruneDk) prunedAtt[k]=att[k];
+  });
+  var payload={
+    att:prunedAtt,
+    shiftDone:shiftDone,
+    CUSTOM_BD:CUSTOM_BD,
+    CUSTOM_DAYS:CUSTOM_DAYS,
+    EXPENSES:EXPENSES,
+    CUSTOM_DOGS:CUSTOM_DOGS,
+    INACTIVE_DOGS:INACTIVE_DOGS,
+    _device:"mobile"
+  };
+  var payloadStr=JSON.stringify(payload);
+
+  // Para Google Apps Script: usar text/plain para evitar preflight CORS
+  var isCloud=!!CLOUD_SYNC_URL;
+  var xhr=new XMLHttpRequest();
+  xhr.open("POST",url,true);
+  if(isCloud){
+    xhr.setRequestHeader("Content-Type","text/plain");
+  } else {
+    xhr.setRequestHeader("Content-Type","application/json");
+    xhr.setRequestHeader("X-Device","mobile");
+  }
+  xhr.timeout=15000; // 15s para Google (puede ser lento)
+  xhr.onload=function(){
+    syncStatus="ok";updateSyncBadge();
+    // Limpiar cola offline si hay éxito
+    if(offlineQueue.length){offlineQueue=[];saveOfflineQueue();}
+  };
+  xhr.onerror=function(){
+    // Guardar en cola offline
+    offlineQueue.push({payload:payloadStr,time:new Date().toISOString()});
+    saveOfflineQueue();
+    syncStatus="offline";updateSyncBadge();
+  };
+  xhr.ontimeout=function(){
+    offlineQueue.push({payload:payloadStr,time:new Date().toISOString()});
+    saveOfflineQueue();
+    syncStatus="offline";updateSyncBadge();
+  };
+  xhr.send(payloadStr);
+}
+
+function syncPull(cb){
+  var url=getSyncUrl();
+  if(!url){syncStatus="offline";updateSyncBadge();if(cb)cb();return;}
+  syncStatus="syncing";updateSyncBadge();
+  var xhr=new XMLHttpRequest();
+  xhr.open("GET",url,true);
+  xhr.timeout=15000;
+  xhr.onload=function(){
+    if(xhr.status===200){
+      try{
+        var data=JSON.parse(xhr.responseText);
+        var changed=false;
+        // Sync Absoluta: Server Wins cuando no hay cola offline
+        var canOverwrite=(offlineQueue.length===0);
+        // --- att: asistencia ---
+        if(data.att){
+          if(canOverwrite){
+            // Server wins: overwrite + delete missing
+            Object.keys(data.att).forEach(function(k){
+              if(att[k]!==data.att[k]){att[k]=data.att[k];changed=true;}
+            });
+            // Delete local keys the server no longer has (only recent 90d)
+            var pruneLimit=fd(new Date(new Date().getTime()-90*86400000));
+            Object.keys(att).forEach(function(k){
+              var dp=k.substring(0,10);
+              if(dp>=pruneLimit&&data.att[k]===undefined){delete att[k];changed=true;}
+            });
+          } else {
+            // Offline protection: add-only
+            Object.keys(data.att).forEach(function(k){
+              if(att[k]===undefined){att[k]=data.att[k];changed=true;}
+            });
+          }
+        }
+        // --- CUSTOM_BD: boarding ---
+        if(data.CUSTOM_BD){
+          if(canOverwrite){
+            CUSTOM_BD=data.CUSTOM_BD;changed=true;
+          } else {
+            Object.keys(data.CUSTOM_BD).forEach(function(k){
+              if(!CUSTOM_BD[k]){CUSTOM_BD[k]=data.CUSTOM_BD[k];changed=true;}
+            });
+          }
+        }
+        // --- EXPENSES: append-only (nunca borrar) ---
+        if(data.EXPENSES&&data.EXPENSES.length){
+          data.EXPENSES.forEach(function(exp){
+            var dup=false;
+            for(var i=0;i<EXPENSES.length;i++){
+              if(EXPENSES[i].date===exp.date&&EXPENSES[i].amount===exp.amount&&EXPENSES[i].cat===exp.cat){dup=true;break;}
+            }
+            if(!dup){EXPENSES.push(exp);changed=true;}
+          });
+        }
+        // --- INACTIVE_DOGS ---
+        if(data.INACTIVE_DOGS){
+          if(canOverwrite){
+            INACTIVE_DOGS=data.INACTIVE_DOGS;changed=true;
+          } else {
+            Object.keys(data.INACTIVE_DOGS).forEach(function(k){
+              if(!INACTIVE_DOGS[k]){INACTIVE_DOGS[k]=data.INACTIVE_DOGS[k];changed=true;}
+            });
+          }
+        }
+        // --- CUSTOM_DAYS ---
+        if(data.CUSTOM_DAYS){
+          if(canOverwrite){
+            CUSTOM_DAYS=data.CUSTOM_DAYS;changed=true;
+          } else {
+            Object.keys(data.CUSTOM_DAYS).forEach(function(k){
+              if(!CUSTOM_DAYS[k]){CUSTOM_DAYS[k]=data.CUSTOM_DAYS[k];changed=true;}
+            });
+          }
+        }
+        // --- shiftDone: estado de turnos ---
+        if(data.shiftDone){
+          if(canOverwrite){
+            shiftDone=data.shiftDone;changed=true;
+          } else {
+            Object.keys(data.shiftDone).forEach(function(k){
+              if(shiftDone[k]===undefined){shiftDone[k]=data.shiftDone[k];changed=true;}
+            });
+          }
+        }
+        if(changed){
+          try{
+            localStorage.setItem("gz2_att",JSON.stringify(att));
+            localStorage.setItem("gz2_cbd",JSON.stringify(CUSTOM_BD));
+            localStorage.setItem("gz2_cd",JSON.stringify(CUSTOM_DAYS));
+            localStorage.setItem("gz2_exp",JSON.stringify(EXPENSES));
+            localStorage.setItem("gz2_inact",JSON.stringify(INACTIVE_DOGS));
+            localStorage.setItem("gz2m_shift_done",JSON.stringify(shiftDone));
+          }catch(e){}
+        }
+        syncStatus="ok";
+      }catch(e){syncStatus="ok";} // Even if parse fails, connection worked
+    } else {syncStatus="offline";}
+    updateSyncBadge();
+    if(cb)cb();
+  };
+  xhr.onerror=function(){syncStatus="offline";updateSyncBadge();if(cb)cb();};
+  xhr.ontimeout=function(){syncStatus="offline";updateSyncBadge();if(cb)cb();};
+  xhr.send();
+}
+
+function updateSyncBadge(){
+  var el=document.querySelector(".hdr-sync");
+  if(!el)return;
+  var qLen=offlineQueue.length;
+  // Remove old offline bar if exists
+  var oldBar=document.getElementById("offline-bar");
+  if(oldBar)oldBar.remove();
+  if(syncStatus==="ok"&&!qLen){
+    el.style.background="#f0fdf4";el.style.color="#15803d";el.style.borderColor="#86efac";el.textContent="🟢 OK";
+  } else if(syncStatus==="syncing"){
+    el.style.background="#eff6ff";el.style.color="#1d4ed8";el.style.borderColor="#93c5fd";el.textContent="🔄";
+  } else if(syncStatus==="offline"||qLen){
+    el.style.background="#fffbeb";el.style.color="#b45309";el.style.borderColor="#fde68a";el.textContent="⚡ "+qLen;
+    // Inject amber offline bar below header
+    var hdr=document.querySelector(".hdr");
+    if(hdr&&!document.getElementById("offline-bar")){
+      var bar=document.createElement("div");
+      bar.id="offline-bar";
+      bar.style.cssText="background:#fef3c7;color:#92400e;text-align:center;padding:6px 12px;font-size:12px;font-weight:700;border-bottom:1.5px solid #fde68a;letter-spacing:.02em";
+      bar.textContent="⚡ Trabajando sin conexión"+(qLen?" ("+qLen+" en cola)":"");
+      hdr.insertAdjacentElement("afterend",bar);
+    }
+  } else {
+    el.style.background="#f0f0ec";el.style.color="#888";el.style.borderColor="#d4d0c8";el.textContent="⚪";
+  }
+}
+
+// Retry offline queue when internet returns
+function flushOfflineQueue(){
+  if(!offlineQueue.length)return;
+  var url=getSyncUrl();
+  if(!url)return;
+  var item=offlineQueue[0];
+  var isCloud=!!CLOUD_SYNC_URL;
+  var xhr=new XMLHttpRequest();
+  xhr.open("POST",url,true);
+  xhr.setRequestHeader("Content-Type",isCloud?"text/plain":"application/json");
+  xhr.timeout=15000;
+  xhr.onload=function(){
+    offlineQueue.shift();saveOfflineQueue();
+    updateSyncBadge();
+    if(offlineQueue.length)setTimeout(flushOfflineQueue,2000);
+  };
+  xhr.onerror=function(){};
+  xhr.send(item.payload);
+}
+window.addEventListener("online",function(){flushOfflineQueue();syncPull(function(){render();});});
+
+// Pull cada 30s
+setInterval(function(){syncPull(function(){render();});},30000);
+// Retry cola cada 60s
+setInterval(function(){if(offlineQueue.length)flushOfflineQueue();},60000);
+
+/* ═══ INIT ═══ */
+loadS();
+flushOfflineQueue();
+syncPull(function(){render();});
+render();
+</script>
+</body>
+</html>
+
+
