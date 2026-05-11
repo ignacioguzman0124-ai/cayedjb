@@ -178,8 +178,14 @@
         return typeof e.key === "string" && e.key.indexOf(todayKey) === 0;
       }).slice(0, 50);
       var reduced = reduceEvents(arr);
-      lastSyncedAtt = reduced.att;
-      lastSyncedShift = reduced.shiftDone;
+      // CRÍTICO: clonar antes de guardar como baseline del diff.
+      // El callback hace `att = reduced.att` (alias por referencia). Si
+      // guardamos `lastSyncedAtt = reduced.att`, cuando el usuario muta
+      // att[k] = v también muta lastSyncedAtt[k] = v, y el diff en
+      // syncFromGlobals nunca detecta cambio → cero events emitidos.
+      // Shallow es suficiente: los values son primitivos (true/false).
+      lastSyncedAtt = Object.assign({}, reduced.att);
+      lastSyncedShift = Object.assign({}, reduced.shiftDone);
       if (callbacks.onEvents) {
         try { callbacks.onEvents(reduced); } catch(e){ console.error("onEvents handler failed", e); }
       }
@@ -206,15 +212,24 @@
     if (!ready) { pendingOps.push(function(){ syncFromGlobals(g); }); return; }
 
     // --- att: diff por key ---
+    // Tras emitir un evento actualizamos prev optimísticamente para evitar
+    // re-emisión si syncFromGlobals se llama de nuevo antes de que el listener
+    // refleje el cambio. El listener al final sobreescribe lastSyncedAtt con
+    // el reducido del server (con clone), así que esto es seguro.
     if (g.att) {
       var att = g.att, prev = lastSyncedAtt || {};
       var seen = {};
       Object.keys(att).forEach(function(k){
         seen[k] = true;
-        if (att[k] !== prev[k]) addEvent({ type:"att", key:k, value:att[k], prev:prev[k] });
+        if (att[k] !== prev[k]) {
+          addEvent({ type:"att", key:k, value:att[k], prev:prev[k] });
+          prev[k] = att[k];
+        }
       });
-      Object.keys(prev).forEach(function(k){
-        if (!seen[k]) addEvent({ type:"att", key:k, value:null, prev:prev[k] }); // deleted
+      var deletes = Object.keys(prev).filter(function(k){ return !seen[k]; });
+      deletes.forEach(function(k){
+        addEvent({ type:"att", key:k, value:null, prev:prev[k] });
+        delete prev[k];
       });
     }
 
@@ -224,10 +239,15 @@
       var sseen = {};
       Object.keys(sd).forEach(function(k){
         sseen[k] = true;
-        if (sd[k] !== sprev[k]) addEvent({ type:"shift", key:k, value:sd[k], prev:sprev[k] });
+        if (sd[k] !== sprev[k]) {
+          addEvent({ type:"shift", key:k, value:sd[k], prev:sprev[k] });
+          sprev[k] = sd[k];
+        }
       });
-      Object.keys(sprev).forEach(function(k){
-        if (!sseen[k]) addEvent({ type:"shift", key:k, value:null, prev:sprev[k] });
+      var sdeletes = Object.keys(sprev).filter(function(k){ return !sseen[k]; });
+      sdeletes.forEach(function(k){
+        addEvent({ type:"shift", key:k, value:null, prev:sprev[k] });
+        delete sprev[k];
       });
     }
 
