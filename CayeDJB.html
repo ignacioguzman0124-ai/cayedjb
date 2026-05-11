@@ -4,6 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CayeDJB · WalkingDogCo.uk</title>
+
+<!-- FIREBASE v4 — ver BRIEF_CLAUDE_CODE_v4_firebase.md -->
+<script>window.CAYE_DEVICE = "pc";</script>
+<script src="./firebase-config.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getFirestore, doc, collection, addDoc, getDoc, getDocs, setDoc,
+    onSnapshot, query, where, orderBy, limit, serverTimestamp, writeBatch,
+    enableIndexedDbPersistence
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+  const app  = initializeApp(window.FIREBASE_CONFIG);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+
+  enableIndexedDbPersistence(db).catch(()=>{});
+
+  await signInAnonymously(auth);
+  await new Promise((res)=>{ const unsub = onAuthStateChanged(auth,(u)=>{ if(u){ unsub(); res(); } }); });
+
+  window.CayeDB = { db, auth, doc, collection, addDoc, getDoc, getDocs,
+                    setDoc, onSnapshot, query, where, orderBy, limit,
+                    serverTimestamp, writeBatch };
+</script>
+<script src="./cayesync.js"></script>
+
 <script>
 (function(){
   if(localStorage.getItem("gz2_auth")==="241333")return;
@@ -510,102 +538,72 @@ window.addEventListener("storage",function(e){
   }
 });
 
-/* ═══ SYNC — Google Sheets Cloud ═══ */
-
-// ⚠️ PEGAR AQUÍ TU URL DE GOOGLE APPS SCRIPT (ver SETUP_SYNC_GUIDE.md)
+/* ═══ SYNC — FIREBASE v4 ═══ */
+// LEGACY GAS — borrar en fase 10
 var CLOUD_SYNC_URL="https://script.google.com/macros/s/AKfycby_GtltbcWOqAEcqiXvVjH__WsVTIGDRm9azMhYQj1A1TBI1xI3fuRVJhzvt5jR0s5N/exec";
-
-// Fallback: servidor local (para desarrollo)
 var PC_LOCAL_URL="";
-(function(){
-  var loc=window.location;
-  if(loc.protocol==="http:"||loc.protocol==="https:"){
-    PC_LOCAL_URL=loc.protocol+"//"+loc.host+"/api/state";
-  }
-})();
+function getPcSyncUrl(){return CLOUD_SYNC_URL||PC_LOCAL_URL;} // LEGACY GAS — borrar en fase 10
 
-function getPcSyncUrl(){return CLOUD_SYNC_URL||PC_LOCAL_URL;}
+// FIREBASE v4 — los listeners realtime de CayeSync.bootstrap() reemplazan el pull.
+function pcSyncPull(){ /* no-op — el listener mantiene los globals al día */ }
 
-function pcSyncPull(){
-  var url=getPcSyncUrl();
-  if(!url)return;
-  var xhr=new XMLHttpRequest();
-  xhr.open("GET",url,true);
-  xhr.timeout=15000;
-  xhr.onload=function(){
-    if(xhr.status===200){
-      try{
-        var data=JSON.parse(xhr.responseText);
-        var changed=false;
-        // Sync Absoluta — Server Wins (PC siempre acepta datos del server)
-        if(data.att){
-          Object.keys(data.att).forEach(function(k){
-            if(att[k]!==data.att[k]){att[k]=data.att[k];changed=true;}
-          });
-        }
-        if(data.CUSTOM_BD){
-          CUSTOM_BD=data.CUSTOM_BD;changed=true;
-        }
-        if(data.CUSTOM_DOGS){
-          CUSTOM_DOGS=data.CUSTOM_DOGS;changed=true;
-        }
-        if(data.CUSTOM_DAYS){
-          CUSTOM_DAYS=data.CUSTOM_DAYS;changed=true;
-        }
-        if(data.INACTIVE_DOGS){
-          INACTIVE_DOGS=data.INACTIVE_DOGS;changed=true;
-        }
-        if(data.EXPENSES&&data.EXPENSES.length){
-          data.EXPENSES.forEach(function(exp){
-            var dup=false;
-            for(var i=0;i<EXPENSES.length;i++){
-              if(EXPENSES[i].id&&exp.id&&EXPENSES[i].id===exp.id){dup=true;break;}
-              else if(!EXPENSES[i].id&&!exp.id&&EXPENSES[i].date===exp.date&&EXPENSES[i].amount===exp.amount&&EXPENSES[i].cat===exp.cat){dup=true;break;}
-            }
-            if(!dup){EXPENSES.push(exp);changed=true;}
-          });
-        }
-        /* shiftDone sync — Server Wins */
-        if(data.shiftDone){
-          if(!window.pcShiftDone)window.pcShiftDone={};
-          window.pcShiftDone=data.shiftDone;changed=true;
-        }
-        if(changed){saveS();render();}
-      }catch(e){}
-    }
-  };
-  xhr.onerror=function(){};
-  xhr.ontimeout=function(){};
-  xhr.send();
-}
-
+// FIREBASE v4 — diff-and-emit hacia Firestore.
+// CayeSync compara los globals contra lastSynced* y emite los cambios:
+//   - att/shiftDone → events/{id} con LWW por key
+//   - state config → state/main (merge: CUSTOM_DOGS, CUSTOM_BD, CUSTOM_DAYS,
+//     INACTIVE_DOGS, CUSTOM_RATES, TEMP_RATES, WR, BR, pay)
+//   - EXPENSES → expenses/{id}
 function pcSyncPush(){
-  var url=getPcSyncUrl();
-  if(!url)return;
-  var payload={
-    att:att, pay:pay,
-    CUSTOM_DAYS:CUSTOM_DAYS, CUSTOM_DOGS:CUSTOM_DOGS,
-    CUSTOM_BD:CUSTOM_BD, INACTIVE_DOGS:INACTIVE_DOGS,
-    EXPENSES:EXPENSES, CUSTOM_RATES:CUSTOM_RATES,
-    TEMP_RATES:TEMP_RATES, WR:WR, BR:BR,
-    _device:"pc"
-  };
-  var isCloud=!!CLOUD_SYNC_URL;
-  var xhr=new XMLHttpRequest();
-  xhr.open("POST",url,true);
-  if(isCloud){
-    xhr.setRequestHeader("Content-Type","text/plain");
-  } else {
-    xhr.setRequestHeader("Content-Type","application/json");
-    xhr.setRequestHeader("X-Device","pc");
-  }
-  xhr.timeout=15000;
-  xhr.send(JSON.stringify(payload));
+  if (!window.CayeSync) return;
+  try {
+    window.CayeSync.syncFromGlobals({
+      att: att,
+      shiftDone: (window.pcShiftDone||{}),
+      state: {
+        CUSTOM_DOGS: CUSTOM_DOGS,
+        CUSTOM_BD:   CUSTOM_BD,
+        CUSTOM_DAYS: CUSTOM_DAYS,
+        INACTIVE_DOGS: INACTIVE_DOGS,
+        CUSTOM_RATES: CUSTOM_RATES,
+        TEMP_RATES:   TEMP_RATES,
+        WR: WR,
+        BR: BR,
+        pay: pay
+      },
+      expenses: EXPENSES
+    });
+  } catch(e){ console.error("pcSyncPush failed", e); }
 }
 
-// Pull each 30s, initial pull after 2s
-setInterval(pcSyncPull,30000);
-setTimeout(pcSyncPull,2000);
+// FIREBASE v4 — arranca los listeners realtime. onState/onEvents/onExpenses
+// sobrescriben los globals y re-renderizan.
+function pcBootstrapSync(){
+  if (!window.CayeSync) return;
+  window.CayeSync.bootstrap({
+    onState: function(data){
+      if (data.CUSTOM_DOGS)   CUSTOM_DOGS   = data.CUSTOM_DOGS;
+      if (data.CUSTOM_BD)     CUSTOM_BD     = data.CUSTOM_BD;
+      if (data.CUSTOM_DAYS)   CUSTOM_DAYS   = data.CUSTOM_DAYS;
+      if (data.INACTIVE_DOGS) INACTIVE_DOGS = data.INACTIVE_DOGS;
+      if (data.CUSTOM_RATES)  CUSTOM_RATES  = data.CUSTOM_RATES;
+      if (data.TEMP_RATES)    TEMP_RATES    = data.TEMP_RATES;
+      if (typeof data.WR === "number") WR = data.WR;
+      if (typeof data.BR === "number") BR = data.BR;
+      if (data.pay)           pay           = data.pay;
+      try { render(); } catch(e){ console.error("render after onState failed", e); }
+    },
+    onEvents: function(reduced){
+      att = reduced.att || {};
+      window.pcShiftDone = reduced.shiftDone || {};
+      try { render(); } catch(e){ console.error("render after onEvents failed", e); }
+    },
+    onExpenses: function(arr){
+      EXPENSES = arr || [];
+      try { render(); } catch(e){ console.error("render after onExpenses failed", e); }
+    }
+  });
+}
+setTimeout(pcBootstrapSync, 100);
 
 
 function initAtt(){

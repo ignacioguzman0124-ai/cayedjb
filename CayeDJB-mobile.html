@@ -8,6 +8,36 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>CayeDJB Mobile</title>
 <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQ2F5ZURKQiBNb2JpbGUiLCJzaG9ydF9uYW1lIjoiQ2F5ZURKQiIsInN0YXJ0X3VybCI6Ii4vQ2F5ZURKQi1tb2JpbGUuaHRtbCIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxYzFjMWEiLCJ0aGVtZV9jb2xvciI6IiMxYzFjMWEiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHRleHQgeT0nLjllbScgZm9udC1zaXplPSc5MCc+8J+QvjwvdGV4dD48L3N2Zz4iLCJzaXplcyI6ImFueSIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
+
+<!-- FIREBASE v4 — ver BRIEF_CLAUDE_CODE_v4_firebase.md -->
+<script>window.CAYE_DEVICE = "mobile";</script>
+<script src="./firebase-config.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getFirestore, doc, collection, addDoc, getDoc, getDocs, setDoc,
+    onSnapshot, query, where, orderBy, limit, serverTimestamp, writeBatch,
+    enableIndexedDbPersistence
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+  const app  = initializeApp(window.FIREBASE_CONFIG);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+
+  // Persistencia offline OBLIGATORIA — sobrevive a ITP Safari
+  enableIndexedDbPersistence(db).catch(()=>{});
+
+  // Auth anónimo, una vez por dispositivo, persistente
+  await signInAnonymously(auth);
+  await new Promise((res)=>{ const unsub = onAuthStateChanged(auth,(u)=>{ if(u){ unsub(); res(); } }); });
+
+  window.CayeDB = { db, auth, doc, collection, addDoc, getDoc, getDocs,
+                    setDoc, onSnapshot, query, where, orderBy, limit,
+                    serverTimestamp, writeBatch };
+</script>
+<script src="./cayesync.js"></script>
+
 <script>
 (function(){
   if(localStorage.getItem("gz2_auth")==="241333")return;
@@ -1268,193 +1298,51 @@ if("Notification" in window&&Notification.permission==="default"){
   Notification.requestPermission();
 }
 
-/* ═══ SYNC — Google Sheets Cloud ═══ */
-
-// ⚠️ PEGAR AQUÍ TU URL DE GOOGLE APPS SCRIPT (ver SETUP_SYNC_GUIDE.md)
+/* ═══ SYNC — FIREBASE v4 ═══ */
+// LEGACY GAS — borrar en fase 10
+// Se conserva CLOUD_SYNC_URL como referencia; ya no se usa.
 var CLOUD_SYNC_URL="https://script.google.com/macros/s/AKfycby_GtltbcWOqAEcqiXvVjH__WsVTIGDRm9azMhYQj1A1TBI1xI3fuRVJhzvt5jR0s5N/exec";
-
-// Fallback: servidor local (para desarrollo)
 var LOCAL_SYNC_URL="";
-(function(){
-  var loc=window.location;
-  if(loc.protocol==="http:"||loc.protocol==="https:"){
-    LOCAL_SYNC_URL=loc.protocol+"//"+loc.host+"/api/state";
-  }
-})();
-
-function getSyncUrl(){return CLOUD_SYNC_URL||LOCAL_SYNC_URL;}
+function getSyncUrl(){return CLOUD_SYNC_URL||LOCAL_SYNC_URL;} // LEGACY GAS — borrar en fase 10
 var syncStatus="unknown";
-var offlineQueue=[];
+var offlineQueue=[]; // LEGACY GAS — el SDK de Firebase tiene su propia cola IndexedDB
 
-// Cargar cola offline de localStorage
-try{
-  var oq=localStorage.getItem("gz2m_offline_queue");
-  if(oq)offlineQueue=JSON.parse(oq);
-}catch(e){}
-
+// LEGACY GAS — borrar en fase 10
 function saveOfflineQueue(){
   try{localStorage.setItem("gz2m_offline_queue",JSON.stringify(offlineQueue));}catch(e){}
 }
 
+// FIREBASE v4 — diff-and-emit. Lo invoca saveS() tras cada mutación del usuario.
+// CayeSync compara los globals contra lastSynced* y emite los cambios:
+//   - att/shiftDone → events/{id} con LWW por key
+//   - CUSTOM_DOGS/CUSTOM_BD/CUSTOM_DAYS/INACTIVE_DOGS → state/main (merge)
+//   - EXPENSES → expenses/{id}
+// El SDK gestiona la cola offline en IndexedDB.
 function syncPush(){
-  var url=getSyncUrl();
-  if(!url){syncStatus="offline";updateSyncBadge();return;}
-  syncStatus="syncing";updateSyncBadge();
-  // Prune att to last 90 days for cloud sync (localStorage keeps all)
-  var pruneDate=new Date();
-  pruneDate.setDate(pruneDate.getDate()-90);
-  var pruneDk=fd(pruneDate);
-  var prunedAtt={};
-  Object.keys(att).forEach(function(k){
-    var datePart=k.substring(0,10);
-    if(datePart>=pruneDk) prunedAtt[k]=att[k];
-  });
-  var payload={
-    att:prunedAtt,
-    shiftDone:shiftDone,
-    CUSTOM_BD:CUSTOM_BD,
-    CUSTOM_DAYS:CUSTOM_DAYS,
-    EXPENSES:EXPENSES,
-    CUSTOM_DOGS:CUSTOM_DOGS,
-    INACTIVE_DOGS:INACTIVE_DOGS,
-    _device:"mobile"
-  };
-  var payloadStr=JSON.stringify(payload);
-
-  // Para Google Apps Script: usar text/plain para evitar preflight CORS
-  var isCloud=!!CLOUD_SYNC_URL;
-  var xhr=new XMLHttpRequest();
-  xhr.open("POST",url,true);
-  if(isCloud){
-    xhr.setRequestHeader("Content-Type","text/plain");
-  } else {
-    xhr.setRequestHeader("Content-Type","application/json");
-    xhr.setRequestHeader("X-Device","mobile");
+  syncStatus="syncing"; updateSyncBadge();
+  if (!window.CayeSync) { syncStatus="offline"; updateSyncBadge(); return; }
+  try {
+    window.CayeSync.syncFromGlobals({
+      att: att,
+      shiftDone: shiftDone,
+      state: {
+        CUSTOM_DOGS: CUSTOM_DOGS,
+        CUSTOM_BD:   CUSTOM_BD,
+        CUSTOM_DAYS: CUSTOM_DAYS,
+        INACTIVE_DOGS: INACTIVE_DOGS
+      },
+      expenses: EXPENSES
+    });
+    syncStatus="ok"; updateSyncBadge();
+  } catch(e){
+    console.error("syncPush failed", e);
+    syncStatus="offline"; updateSyncBadge();
   }
-  xhr.timeout=15000; // 15s para Google (puede ser lento)
-  xhr.onload=function(){
-    syncStatus="ok";updateSyncBadge();
-    // Limpiar cola offline si hay éxito
-    if(offlineQueue.length){offlineQueue=[];saveOfflineQueue();}
-  };
-  xhr.onerror=function(){
-    // Guardar en cola offline
-    offlineQueue.push({payload:payloadStr,time:new Date().toISOString()});
-    saveOfflineQueue();
-    syncStatus="offline";updateSyncBadge();
-  };
-  xhr.ontimeout=function(){
-    offlineQueue.push({payload:payloadStr,time:new Date().toISOString()});
-    saveOfflineQueue();
-    syncStatus="offline";updateSyncBadge();
-  };
-  xhr.send(payloadStr);
 }
 
-function syncPull(cb){
-  var url=getSyncUrl();
-  if(!url){syncStatus="offline";updateSyncBadge();if(cb)cb();return;}
-  syncStatus="syncing";updateSyncBadge();
-  var xhr=new XMLHttpRequest();
-  xhr.open("GET",url,true);
-  xhr.timeout=15000;
-  xhr.onload=function(){
-    if(xhr.status===200){
-      try{
-        var data=JSON.parse(xhr.responseText);
-        var changed=false;
-        // Sync Absoluta: Server Wins cuando no hay cola offline
-        var canOverwrite=(offlineQueue.length===0);
-        // --- att: asistencia ---
-        if(data.att){
-          if(canOverwrite){
-            // Server wins: overwrite + delete missing
-            Object.keys(data.att).forEach(function(k){
-              if(att[k]!==data.att[k]){att[k]=data.att[k];changed=true;}
-            });
-            // Delete local keys the server no longer has (only recent 90d)
-            var pruneLimit=fd(new Date(new Date().getTime()-90*86400000));
-            Object.keys(att).forEach(function(k){
-              var dp=k.substring(0,10);
-              if(dp>=pruneLimit&&data.att[k]===undefined){delete att[k];changed=true;}
-            });
-          } else {
-            // Offline protection: add-only
-            Object.keys(data.att).forEach(function(k){
-              if(att[k]===undefined){att[k]=data.att[k];changed=true;}
-            });
-          }
-        }
-        // --- CUSTOM_BD: boarding ---
-        if(data.CUSTOM_BD){
-          if(canOverwrite){
-            CUSTOM_BD=data.CUSTOM_BD;changed=true;
-          } else {
-            Object.keys(data.CUSTOM_BD).forEach(function(k){
-              if(!CUSTOM_BD[k]){CUSTOM_BD[k]=data.CUSTOM_BD[k];changed=true;}
-            });
-          }
-        }
-        // --- EXPENSES: append-only (nunca borrar) ---
-        if(data.EXPENSES&&data.EXPENSES.length){
-          data.EXPENSES.forEach(function(exp){
-            var dup=false;
-            for(var i=0;i<EXPENSES.length;i++){
-              if(EXPENSES[i].date===exp.date&&EXPENSES[i].amount===exp.amount&&EXPENSES[i].cat===exp.cat){dup=true;break;}
-            }
-            if(!dup){EXPENSES.push(exp);changed=true;}
-          });
-        }
-        // --- INACTIVE_DOGS ---
-        if(data.INACTIVE_DOGS){
-          if(canOverwrite){
-            INACTIVE_DOGS=data.INACTIVE_DOGS;changed=true;
-          } else {
-            Object.keys(data.INACTIVE_DOGS).forEach(function(k){
-              if(!INACTIVE_DOGS[k]){INACTIVE_DOGS[k]=data.INACTIVE_DOGS[k];changed=true;}
-            });
-          }
-        }
-        // --- CUSTOM_DAYS ---
-        if(data.CUSTOM_DAYS){
-          if(canOverwrite){
-            CUSTOM_DAYS=data.CUSTOM_DAYS;changed=true;
-          } else {
-            Object.keys(data.CUSTOM_DAYS).forEach(function(k){
-              if(!CUSTOM_DAYS[k]){CUSTOM_DAYS[k]=data.CUSTOM_DAYS[k];changed=true;}
-            });
-          }
-        }
-        // --- shiftDone: estado de turnos ---
-        if(data.shiftDone){
-          if(canOverwrite){
-            shiftDone=data.shiftDone;changed=true;
-          } else {
-            Object.keys(data.shiftDone).forEach(function(k){
-              if(shiftDone[k]===undefined){shiftDone[k]=data.shiftDone[k];changed=true;}
-            });
-          }
-        }
-        if(changed){
-          try{
-            localStorage.setItem("gz2_att",JSON.stringify(att));
-            localStorage.setItem("gz2_cbd",JSON.stringify(CUSTOM_BD));
-            localStorage.setItem("gz2_cd",JSON.stringify(CUSTOM_DAYS));
-            localStorage.setItem("gz2_exp",JSON.stringify(EXPENSES));
-            localStorage.setItem("gz2_inact",JSON.stringify(INACTIVE_DOGS));
-            localStorage.setItem("gz2m_shift_done",JSON.stringify(shiftDone));
-          }catch(e){}
-        }
-        syncStatus="ok";
-      }catch(e){syncStatus="ok";} // Even if parse fails, connection worked
-    } else {syncStatus="offline";}
-    updateSyncBadge();
-    if(cb)cb();
-  };
-  xhr.onerror=function(){syncStatus="offline";updateSyncBadge();if(cb)cb();};
-  xhr.ontimeout=function(){syncStatus="offline";updateSyncBadge();if(cb)cb();};
-  xhr.send();
-}
+// FIREBASE v4 — los listeners realtime de CayeSync.bootstrap() reemplazan el pull.
+// syncPull queda como no-op para compatibilidad con call-sites existentes.
+function syncPull(cb){ if(cb)cb(); }
 
 function updateSyncBadge(){
   var el=document.querySelector(".hdr-sync");
@@ -1502,18 +1390,39 @@ function flushOfflineQueue(){
   xhr.onerror=function(){};
   xhr.send(item.payload);
 }
-window.addEventListener("online",function(){flushOfflineQueue();syncPull(function(){render();});});
-
-// Pull cada 30s
-setInterval(function(){syncPull(function(){render();});},30000);
-// Retry cola cada 60s
+// LEGACY GAS — borrar en fase 10
+window.addEventListener("online",function(){flushOfflineQueue();});
 setInterval(function(){if(offlineQueue.length)flushOfflineQueue();},60000);
 
 /* ═══ INIT ═══ */
+// FIREBASE v4 — orden:
+//   1. loadS() pinta inmediato desde localStorage (UI rápida, offline-friendly)
+//   2. render() inicial con datos locales
+//   3. CayeSync.bootstrap() arranca listeners; cuando llegan datos del server,
+//      sobrescribe los globals y re-renderiza
 loadS();
-flushOfflineQueue();
-syncPull(function(){render();});
 render();
+if (window.CayeSync) {
+  window.CayeSync.bootstrap({
+    onState: function(data){
+      if (data.CUSTOM_DOGS)   CUSTOM_DOGS   = data.CUSTOM_DOGS;
+      if (data.CUSTOM_BD)     CUSTOM_BD     = data.CUSTOM_BD;
+      if (data.CUSTOM_DAYS)   CUSTOM_DAYS   = data.CUSTOM_DAYS;
+      if (data.INACTIVE_DOGS) INACTIVE_DOGS = data.INACTIVE_DOGS;
+      try { render(); } catch(e){ console.error("render after onState failed", e); }
+    },
+    onEvents: function(reduced){
+      att = reduced.att || {};
+      shiftDone = reduced.shiftDone || {};
+      try { render(); } catch(e){ console.error("render after onEvents failed", e); }
+    },
+    onExpenses: function(arr){
+      EXPENSES = arr || [];
+      try { render(); } catch(e){ console.error("render after onExpenses failed", e); }
+    }
+  });
+  syncStatus="ok"; updateSyncBadge();
+}
 </script>
 </body>
 </html>
