@@ -31,6 +31,10 @@
   var ready = false;
   var pendingOps = [];               // ops encoladas mientras CayeDB carga
   var DB = null;                     // window.CayeDB (set al estar ready)
+  var applyingRemoteSnapshot = false; // true durante callbacks de listeners,
+                                      // syncFromGlobals lo respeta para no
+                                      // re-emitir si el render del HTML
+                                      // accidentalmente disparase saveS
 
   // Última snapshot reducida del server — usada para diff-and-emit.
   // Tras cada snapshot del listener, se actualiza con lo que llega.
@@ -149,7 +153,10 @@
       var data = snap.exists() ? snap.data() : {};
       lastSyncedState = JSON.parse(JSON.stringify(data));
       if (callbacks.onState) {
-        try { callbacks.onState(data); } catch(e){ console.error("onState handler failed", e); }
+        applyingRemoteSnapshot = true;
+        try { callbacks.onState(data); }
+        catch(e){ console.error("onState handler failed", e); }
+        finally { applyingRemoteSnapshot = false; }
       }
     }, function(err){ console.error("state listener error", err); });
 
@@ -187,7 +194,10 @@
       lastSyncedAtt = Object.assign({}, reduced.att);
       lastSyncedShift = Object.assign({}, reduced.shiftDone);
       if (callbacks.onEvents) {
-        try { callbacks.onEvents(reduced); } catch(e){ console.error("onEvents handler failed", e); }
+        applyingRemoteSnapshot = true;
+        try { callbacks.onEvents(reduced); }
+        catch(e){ console.error("onEvents handler failed", e); }
+        finally { applyingRemoteSnapshot = false; }
       }
     }, function(err){ console.error("events listener error", err); });
 
@@ -200,7 +210,10 @@
       snap.forEach(function(d){ var x = d.data(); arr.push(x); byId[x.id||d.id] = x; });
       lastSyncedExpensesById = byId;
       if (callbacks.onExpenses) {
-        try { callbacks.onExpenses(arr); } catch(e){ console.error("onExpenses handler failed", e); }
+        applyingRemoteSnapshot = true;
+        try { callbacks.onExpenses(arr); }
+        catch(e){ console.error("onExpenses handler failed", e); }
+        finally { applyingRemoteSnapshot = false; }
       }
     }, function(err){ console.error("expenses listener error", err); });
   }
@@ -210,6 +223,10 @@
   // Lo invoca syncPush (móvil) y pcSyncPush (PC) tras saveS().
   function syncFromGlobals(g){
     if (!ready) { pendingOps.push(function(){ syncFromGlobals(g); }); return; }
+    // Anti-loop: si render() durante un listener disparase saveS y este llamase
+    // a syncFromGlobals, el diff vería los cambios recién aplicados contra
+    // lastSynced* (que el listener ya actualizó) y emitiría duplicados.
+    if (applyingRemoteSnapshot) return;
 
     // --- att: diff por key ---
     // Tras emitir un evento actualizamos prev optimísticamente para evitar
@@ -295,6 +312,7 @@
       uid: ready && DB.auth.currentUser ? DB.auth.currentUser.uid : null,
       device: DEVICE,
       ready: ready,
+      applyingRemoteSnapshot: applyingRemoteSnapshot,
       lastAddEventAt: diag.lastAddEventAt,
       lastStateSnapAt: diag.lastStateSnapAt,
       lastEventsSnapAt: diag.lastEventsSnapAt,

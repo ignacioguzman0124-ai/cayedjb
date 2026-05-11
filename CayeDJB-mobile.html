@@ -1405,6 +1405,23 @@ setInterval(function(){if(offlineQueue.length)flushOfflineQueue();},60000);
 //      sobrescribe los globals y re-renderiza
 loadS();
 render();
+
+// FIREBASE v4 — render guard común. Garantiza que tras aplicar un snapshot
+// del listener llamemos render() exactamente una vez por callback, y deja
+// huella verificable en window.__cayesync_renderCount para diagnóstico.
+window.__cayesync_renderCount = 0;
+function __cayesync_doRender(source){
+  window.__cayesync_renderCount++;
+  window.__cayesync_lastRenderSource = source;
+  window.__cayesync_lastRenderAt = Date.now();
+  if (typeof render !== "function") {
+    console.error("[CayeSync] render is not a function (source="+source+")");
+    return;
+  }
+  try { render(); }
+  catch(e){ console.error("[CayeSync] render failed (source="+source+")", e); }
+}
+
 if (window.CayeSync) {
   window.CayeSync.bootstrap({
     onState: function(data){
@@ -1412,16 +1429,16 @@ if (window.CayeSync) {
       if (data.CUSTOM_BD)     CUSTOM_BD     = data.CUSTOM_BD;
       if (data.CUSTOM_DAYS)   CUSTOM_DAYS   = data.CUSTOM_DAYS;
       if (data.INACTIVE_DOGS) INACTIVE_DOGS = data.INACTIVE_DOGS;
-      try { render(); } catch(e){ console.error("render after onState failed", e); }
+      __cayesync_doRender("state");
     },
     onEvents: function(reduced){
       att = reduced.att || {};
       shiftDone = reduced.shiftDone || {};
-      try { render(); } catch(e){ console.error("render after onEvents failed", e); }
+      __cayesync_doRender("events");
     },
     onExpenses: function(arr){
       EXPENSES = arr || [];
-      try { render(); } catch(e){ console.error("render after onExpenses failed", e); }
+      __cayesync_doRender("expenses");
     }
   });
   syncStatus="ok"; updateSyncBadge();

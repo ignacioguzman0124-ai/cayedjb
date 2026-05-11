@@ -578,7 +578,19 @@ function pcSyncPush(){
 }
 
 // FIREBASE v4 — arranca los listeners realtime. onState/onEvents/onExpenses
-// sobrescriben los globals y re-renderizan.
+// sobrescriben los globals y re-renderizan vía __cayesync_doRender.
+window.__cayesync_renderCount = 0;
+function __cayesync_doRender(source){
+  window.__cayesync_renderCount++;
+  window.__cayesync_lastRenderSource = source;
+  window.__cayesync_lastRenderAt = Date.now();
+  if (typeof render !== "function") {
+    console.error("[CayeSync] render is not a function (source="+source+")");
+    return;
+  }
+  try { render(); }
+  catch(e){ console.error("[CayeSync] render failed (source="+source+")", e); }
+}
 function pcBootstrapSync(){
   if (!window.CayeSync) return;
   window.CayeSync.bootstrap({
@@ -592,16 +604,16 @@ function pcBootstrapSync(){
       if (typeof data.WR === "number") WR = data.WR;
       if (typeof data.BR === "number") BR = data.BR;
       if (data.pay)           pay           = data.pay;
-      try { render(); } catch(e){ console.error("render after onState failed", e); }
+      __cayesync_doRender("state");
     },
     onEvents: function(reduced){
       att = reduced.att || {};
       window.pcShiftDone = reduced.shiftDone || {};
-      try { render(); } catch(e){ console.error("render after onEvents failed", e); }
+      __cayesync_doRender("events");
     },
     onExpenses: function(arr){
       EXPENSES = arr || [];
-      try { render(); } catch(e){ console.error("render after onExpenses failed", e); }
+      __cayesync_doRender("expenses");
     }
   });
 }
