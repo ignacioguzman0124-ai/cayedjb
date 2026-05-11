@@ -1,0 +1,53 @@
+// FIREBASE v4 — ver BRIEF_CLAUDE_CODE_v4_firebase.md
+// Security Rules para Firestore — proyecto cayedjb-3d151
+// Modelo: Auth anónimo obligatorio; events inmutable; archive solo lectura cliente.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    // Solo usuarios autenticados (anonymous auth)
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // PIN opcional como custom claim — por ahora todo auth pasa
+
+    match /state/{doc} {
+      allow read, write: if isAuth();
+    }
+
+    match /events/{doc} {
+      allow read: if isAuth();
+      allow create: if isAuth()
+        && request.resource.data.id is string
+        && request.resource.data.device in ['mobile','pc','legacy']
+        && request.resource.data.type in ['att','shift','boarding','expense','rate','dog'];
+      allow update, delete: if false; // log inmutable
+    }
+
+    match /dogs/{doc} {
+      allow read, write: if isAuth();
+    }
+
+    match /expenses/{doc} {
+      allow read, create: if isAuth();
+      allow update, delete: if isAuth()
+        && resource.data.createdBy == request.auth.uid;
+    }
+
+    match /invoices/{doc} {
+      allow read, write: if isAuth();
+    }
+
+    match /archive/{month}/{coll}/{doc} {
+      allow read: if isAuth();
+      allow write: if false; // solo Cloud Function / script admin
+    }
+
+    match /meta/{doc} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+  }
+}
