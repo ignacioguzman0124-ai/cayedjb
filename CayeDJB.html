@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
 <title>CayeDJB · WalkingDogCo.uk</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%BE%3C/text%3E%3C/svg%3E">
 
 <!-- FIREBASE v4 — ver BRIEF_CLAUDE_CODE_v4_firebase.md -->
 <script>window.CAYE_DEVICE = "pc";</script>
@@ -11,17 +13,17 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getFirestore, doc, collection, addDoc, getDoc, getDocs, setDoc,
-    onSnapshot, query, where, orderBy, limit, serverTimestamp, writeBatch,
-    enableIndexedDbPersistence
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+    doc, collection, addDoc, getDoc, getDocs, setDoc,
+    onSnapshot, query, where, orderBy, limit, serverTimestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
   const app  = initializeApp(window.FIREBASE_CONFIG);
-  const db   = getFirestore(app);
+  const db   = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
   const auth = getAuth(app);
-
-  enableIndexedDbPersistence(db).catch(()=>{});
 
   await signInAnonymously(auth);
   await new Promise((res)=>{ const unsub = onAuthStateChanged(auth,(u)=>{ if(u){ unsub(); res(); } }); });

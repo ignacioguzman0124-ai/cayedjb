@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#f8f7f4">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>CayeDJB Mobile</title>
-<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQ2F5ZURKQiBNb2JpbGUiLCJzaG9ydF9uYW1lIjoiQ2F5ZURKQiIsInN0YXJ0X3VybCI6Ii4vQ2F5ZURKQi1tb2JpbGUuaHRtbCIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxYzFjMWEiLCJ0aGVtZV9jb2xvciI6IiMxYzFjMWEiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHRleHQgeT0nLjllbScgZm9udC1zaXplPSc5MCc+8J+QvjwvdGV4dD48L3N2Zz4iLCJzaXplcyI6ImFueSIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%BE%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQ2F5ZURKQiBNb2JpbGUiLCJzaG9ydF9uYW1lIjoiQ2F5ZURKQiIsInN0YXJ0X3VybCI6Ii4vQ2F5ZURKQi1tb2JpbGUuaHRtbCIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxYzFjMWEiLCJ0aGVtZV9jb2xvciI6IiMxYzFjMWEiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyUyMHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyclMjB2aWV3Qm94PScwJTIwMCUyMDEwMCUyMDEwMCclM0UlM0NyZWN0JTIwd2lkdGg9JzEwMCclMjBoZWlnaHQ9JzEwMCclMjBmaWxsPSclMjMxYzFjMWEnLyUzRSUzQ3RleHQlMjB4PSc1MCclMjB5PSc2OCclMjBmb250LXNpemU9JzYwJyUyMHRleHQtYW5jaG9yPSdtaWRkbGUnJTNFJUYwJTlGJTkwJUJFJTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwic2l6ZXMiOiJhbnkiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCJ9XX0=">
 
 <!-- FIREBASE v4 — ver BRIEF_CLAUDE_CODE_v4_firebase.md -->
 <script>window.CAYE_DEVICE = "mobile";</script>
@@ -15,20 +17,21 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getFirestore, doc, collection, addDoc, getDoc, getDocs, setDoc,
-    onSnapshot, query, where, orderBy, limit, serverTimestamp, writeBatch,
-    enableIndexedDbPersistence
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+    doc, collection, addDoc, getDoc, getDocs, setDoc,
+    onSnapshot, query, where, orderBy, limit, serverTimestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
   const app  = initializeApp(window.FIREBASE_CONFIG);
-  const db   = getFirestore(app);
+  // Persistencia offline + multi-tab. API moderna v10 — reemplaza el deprecated
+  // enableIndexedDbPersistence. Multi-tab evita el warning "persistence can only
+  // be enabled in one tab at a time" cuando mobile + PC corren juntos.
+  const db   = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
   const auth = getAuth(app);
 
-  // Persistencia offline OBLIGATORIA — sobrevive a ITP Safari
-  enableIndexedDbPersistence(db).catch(()=>{});
-
-  // Auth anónimo, una vez por dispositivo, persistente
   await signInAnonymously(auth);
   await new Promise((res)=>{ const unsub = onAuthStateChanged(auth,(u)=>{ if(u){ unsub(); res(); } }); });
 

@@ -154,12 +154,17 @@
     }, function(err){ console.error("state listener error", err); });
 
     // 2. Listener events (últimos 90 días)
+    // - clientTs (number) en lugar de ts (serverTimestamp): los writes pendientes
+    //   tienen ts=null hasta que el server los resuelve, y filtrarían off los
+    //   propios escritos del usuario del snapshot local — UX rota.
+    // - SIN limit(): el filtro de 90 días acota naturalmente (~30 perros × 2
+    //   toggles/día = ~5.4k docs de techo). Los archivados >90d se mueven a
+    //   /archive/{YYYYMM}/ en Fase 6. El tope duro de Firestore es 10k.
     var ts90 = new Date(Date.now() - 90*86400000);
     var eventsQ = DB.query(
       DB.collection(DB.db, "events"),
       DB.where("clientTs", ">=", ts90.getTime()),
-      DB.orderBy("clientTs", "desc"),
-      DB.limit(20000)
+      DB.orderBy("clientTs", "desc")
     );
     DB.onSnapshot(eventsQ, function(snap){
       diag.lastEventsSnapAt = Date.now();
