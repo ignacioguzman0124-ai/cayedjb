@@ -1,0 +1,16 @@
+{
+  "name": "cayedjb-backup",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scripts de backup/restore de Firestore para CayeDJB v5 (Firebase Admin SDK). La app en sí es index.html y no necesita build.",
+  "scripts": {
+    "backup": "node scripts/backup_firestore.js",
+    "restore": "node scripts/restore_firestore.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}
