@@ -398,7 +398,8 @@ renderSync(); // estado inicial visible desde el arranque
 
 /* ── Gate de PIN (§1) ──────────────────────────────────────────────
    PIN 241333. No se guarda en claro: se compara el SHA-256 (hex).
-   Éxito → flag en sessionStorage (re-PIN al cerrar el navegador).
+   Éxito → flag en localStorage (1 vez por dispositivo; no re-PIN al cerrar Safari).
+   Fallos/bloqueo van en sessionStorage: el bloqueo por intentos sí se resetea al cerrar.
    3 fallos seguidos → bloqueo 30s. Es local al dispositivo: no toca Firestore. */
 const PIN_HASH = '85dd4e5e68e838c45d94725d38938da269196791804ffbb13d316558fa34743f'; // SHA-256("241333")
 const PIN_OK_KEY = 'cayedjb_pin_ok';
@@ -437,8 +438,8 @@ function initPinGate(){
   const btn = document.getElementById('pinBtn');
   const msg = document.getElementById('pinMsg');
 
-  // Ya validado en esta sesión → entra directo.
-  if(sessionStorage.getItem(PIN_OK_KEY)==='1'){ gate.remove(); startApp(); return; }
+  // Ya validado en este dispositivo (localStorage) → entra directo.
+  if(localStorage.getItem(PIN_OK_KEY)==='1'){ gate.remove(); startApp(); return; }
 
   let lockTimer=null;
   function lockedRemaining(){
@@ -466,7 +467,7 @@ function initPinGate(){
     const ok = (await sha256hex(val)) === PIN_HASH;
     btn.disabled=false;
     if(ok){
-      sessionStorage.setItem(PIN_OK_KEY,'1');
+      localStorage.setItem(PIN_OK_KEY,'1');   // persiste por dispositivo (no por sesión)
       sessionStorage.removeItem(PIN_FAILS_KEY);
       sessionStorage.removeItem(PIN_LOCK_KEY);
       gate.remove();
