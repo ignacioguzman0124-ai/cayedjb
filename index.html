@@ -580,7 +580,7 @@ async function flushWalk(id){
   } else {
     deleteDoc(ref).catch(e=>{ console.error('delete walk',e); setError('No se pudo borrar la marca: '+e.message); });  // vacío = sin doc
   }
-  setDoc(doc(db,'meta','main'), {lastWrite:serverTimestamp(), schemaVersion:5}, {merge:true}).catch(()=>{});
+  bumpMeta();   // meta/main throttled (1×/60s) — antes se escribía en CADA toggle (duplicado)
 }
 
 /* ── Selector de fecha + navegación por días ── */
@@ -1193,8 +1193,18 @@ document.getElementById('addDog').addEventListener('click', async ()=>{
   document.getElementById('newTurn').value='T1';
 });
 
-async function bumpMeta(){
-  try{ await setDoc(doc(db,'meta','main'), {lastWrite:serverTimestamp(), schemaVersion:5}, {merge:true}); }catch(e){}
+/* meta/main es solo un heartbeat (lastWrite). Lo escribimos como mucho 1 vez cada 60s:
+   antes flushWalk lo disparaba en cada toggle (write duplicado innecesario). Leading+trailing:
+   el primer bump escribe ya; los siguientes dentro de la ventana se colapsan en uno al final. */
+let _metaLast = 0, _metaTimer = null;
+function writeMeta(){
+  _metaLast = Date.now();
+  setDoc(doc(db,'meta','main'), {lastWrite:serverTimestamp(), schemaVersion:5}, {merge:true}).catch(()=>{});
+}
+function bumpMeta(){
+  const since = Date.now() - _metaLast;
+  if(since >= 60000){ writeMeta(); }
+  else if(!_metaTimer){ _metaTimer = setTimeout(()=>{ _metaTimer=null; writeMeta(); }, 60000 - since); }
 }
 
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>(
