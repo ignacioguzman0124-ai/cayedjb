@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CayeDJB · Seed Firestore (v5)</title>
+<!-- FIREBASE v5 — script de seed TEMPORAL. Ver 03_DOCS/BRIEF_CLAUDE_CODE_v5_simple.md
+     Modelo de estado ÚNICO: /walks/{fecha}/dogs/{dogId} → status: "walked"|"boarding".
+     Datos embebidos desde Seed_Perros_Firestore.json y Mayo_2026_Firestore_Seed.json.
+     Escribe /dogs (26 perros) y /walks/{fecha}/dogs (312 docs, 30 días). -->
+<script src="./firebase-config.js"></script>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#f0ece6;color:#1c1c1a;max-width:640px;margin:0 auto;padding:24px;line-height:1.5;}
+  h1{font-size:22px;}
+  .warn{background:#fde7d6;border:1px solid #e0a96d;border-radius:10px;padding:12px 14px;margin:14px 0;}
+  button{background:#1b2e1e;color:#fff;border:none;border-radius:10px;padding:14px 18px;
+    font-size:16px;font-weight:700;cursor:pointer;margin:6px 0;width:100%;}
+  button.alt{background:#fff;border:1px solid #e8e3dc;color:#1c1c1a;}
+  button:disabled{opacity:.5;cursor:default;}
+  pre{background:#fff;border:1px solid #e8e3dc;border-radius:10px;padding:12px;
+    white-space:pre-wrap;font-size:13px;max-height:320px;overflow:auto;}
+  code{background:#fff;border:1px solid #e8e3dc;padding:2px 6px;border-radius:6px;}
+</style>
+</head>
+<body>
+  <h1>🌱 Seed Firestore · CayeDJB v5</h1>
+  <p>Proyecto <code>cayedjb-3d151</code>. Modelo de estado único (<code>status</code>), boarding gana sobre paseo.</p>
+  <div class="warn">⚠️ Úsalo <b>una sola vez</b>. Cada doc se escribe por <i>overwrite</i> con el valor del seed
+    (descarta campos antiguos <code>walked/boarding</code>). Re-ejecutar pisa marcas hechas a mano en esas fechas.
+    <b>Borra este archivo tras sembrar.</b></div>
+
+  <button id="btnDogs">1 · Sembrar perros (26)</button>
+  <button id="btnWalks" class="alt">2 · Sembrar walks Mayo 2026 (312 docs · 30 días)</button>
+  <button id="btnWalksAbril" class="alt">2b · Sembrar walks Abril 2026 (29 días)</button>
+  <button id="btnAll">▶ Sembrar TODO (perros + walks Abril + Mayo + meta)</button>
+  <pre id="log">Iniciando sesión anónima…</pre>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getFirestore, doc, writeBatch, setDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+const DOGS = {
+  "aspen": {
+    "name": "Aspen",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "balu": {
+    "name": "Balu",
+    "walkRate": 32.4,
+    "boardingRate": 60,
+    "active": true
+  },
+  "bing": {
+    "name": "Bing",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "bob": {
+    "name": "Bob",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "cato": {
+    "name": "Cato",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "clover": {
+    "name": "Clover",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "coco": {
+    "name": "Coco",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "flaco": {
+    "name": "Flaco",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "gigi": {
+    "name": "Gigi",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "jimmy": {
+    "name": "Jimmy",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "lara": {
+    "name": "Lara",
+    "walkRate": 32.4,
+    "boardingRate": 60,
+    "active": true
+  },
+  "lulu": {
+    "name": "Lulu",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "margot": {
+    "name": "Margot",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "maya": {
+    "name": "Maya",
+    "walkRate": 32.4,
+    "boardingRate": 60,
+    "active": true
+  },
+  "moses": {
+    "name": "Moses",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "nellie": {
+    "name": "Nellie",
+    "walkRate": 35,
+    "boardingRate": 65,
+    "active": true
+  },
+  "neo": {
+    "name": "Neo",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "old_coco": {
+    "name": "Old Coco",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "pierre": {
+    "name": "Pierre",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "pistacho": {
+    "name": "Pistacho",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "purdey": {
+    "name": "Purdey",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "rey": {
+    "name": "Rey",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "river": {
+    "name": "River",
+    "walkRate": 32.4,
+    "boardingRate": 60,
+    "active": true
+  },
+  "snoopy": {
+    "name": "Snoopy",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "teddy": {
+    "name": "Teddy",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  },
+  "yopo": {
+    "name": "Yopo",
+    "walkRate": 30,
+    "boardingRate": 60,
+    "active": true
+  }
+};
+const WALKS = {"2026-05-01": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "boarding"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "boarding"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "boarding"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-02": {"dogs": {"clover": {"status": "boarding"}, "margot": {"status": "walked"}, "pistacho": {"status": "boarding"}}}, "2026-05-03": {"dogs": {"clover": {"status": "boarding"}, "margot": {"status": "walked"}, "pistacho": {"status": "boarding"}}}, "2026-05-04": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "boarding"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "margot": {"status": "walked"}, "maya": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-05": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "boarding"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "margot": {"status": "walked"}, "maya": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-06": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "boarding"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "margot": {"status": "walked"}, "maya": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-07": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "flaco": {"status": "walked"}, "margot": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-08": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "margot": {"status": "walked"}, "maya": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-09": {"dogs": {"nellie": {"status": "boarding"}, "pistacho": {"status": "boarding"}}}, "2026-05-10": {"dogs": {"bing": {"status": "boarding"}, "nellie": {"status": "boarding"}, "pistacho": {"status": "boarding"}}}, "2026-05-11": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "boarding"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "jimmy": {"status": "boarding"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "margot": {"status": "walked"}, "maya": {"status": "walked"}, "nellie": {"status": "boarding"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-12": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "boarding"}, "bob": {"status": "walked"}, "cato": {"status": "boarding"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "jimmy": {"status": "boarding"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "margot": {"status": "walked"}, "maya": {"status": "walked"}, "nellie": {"status": "boarding"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-13": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "boarding"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "jimmy": {"status": "boarding"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "margot": {"status": "walked"}, "maya": {"status": "walked"}, "nellie": {"status": "boarding"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-14": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "boarding"}, "clover": {"status": "boarding"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "jimmy": {"status": "boarding"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "margot": {"status": "walked"}, "maya": {"status": "walked"}, "nellie": {"status": "boarding"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-15": {"dogs": {"balu": {"status": "walked"}, "bing": {"status": "walked"}, "cato": {"status": "boarding"}, "clover": {"status": "boarding"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "boarding"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "nellie": {"status": "boarding"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "boarding"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-05-16": {"dogs": {"cato": {"status": "boarding"}, "clover": {"status": "boarding"}, "jimmy": {"status": "boarding"}, "nellie": {"status": "boarding"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "boarding"}}}, "2026-05-17": {"dogs": {"cato": {"status": "boarding"}, "clover": {"status": "boarding"}, "jimmy": {"status": "boarding"}, "nellie": {"status": "boarding"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "boarding"}}}, "2026-05-18": {"dogs": {"cato": {"status": "boarding"}, "jimmy": {"status": "boarding"}, "lulu": {"status": "walked"}, "nellie": {"status": "boarding"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "boarding"}, "snoopy": {"status": "walked"}}}, "2026-05-19": {"dogs": {"jimmy": {"status": "boarding"}, "lulu": {"status": "walked"}, "nellie": {"status": "boarding"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "snoopy": {"status": "walked"}}}, "2026-05-20": {"dogs": {"lulu": {"status": "walked"}, "nellie": {"status": "boarding"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "snoopy": {"status": "walked"}}}, "2026-05-21": {"dogs": {"lulu": {"status": "walked"}, "nellie": {"status": "boarding"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "snoopy": {"status": "walked"}}}, "2026-05-22": {"dogs": {"lulu": {"status": "walked"}, "nellie": {"status": "boarding"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "snoopy": {"status": "walked"}}}, "2026-05-23": {"dogs": {"cato": {"status": "boarding"}, "nellie": {"status": "boarding"}}}, "2026-05-24": {"dogs": {"cato": {"status": "boarding"}}}, "2026-05-25": {"dogs": {"cato": {"status": "boarding"}}}, "2026-05-26": {"dogs": {"cato": {"status": "boarding"}}}, "2026-05-27": {"dogs": {"cato": {"status": "boarding"}}}, "2026-05-28": {"dogs": {"cato": {"status": "boarding"}}}, "2026-05-29": {"dogs": {"cato": {"status": "boarding"}}}, "2026-05-30": {"dogs": {"cato": {"status": "boarding"}}}};
+
+const WALKS_ABRIL = {"2026-04-01": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "boarding"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-02": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "coco": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "boarding"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-03": {"dogs": {"aspen": {"status": "boarding"}}}, "2026-04-04": {"dogs": {"aspen": {"status": "boarding"}}}, "2026-04-05": {"dogs": {"aspen": {"status": "boarding"}}}, "2026-04-06": {"dogs": {"aspen": {"status": "boarding"}}}, "2026-04-07": {"dogs": {"aspen": {"status": "boarding"}, "balu": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "flaco": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "river": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-08": {"dogs": {"aspen": {"status": "boarding"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-09": {"dogs": {"aspen": {"status": "boarding"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-10": {"dogs": {"aspen": {"status": "boarding"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-11": {"dogs": {"aspen": {"status": "boarding"}}}, "2026-04-13": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-14": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-15": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "boarding"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-16": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "boarding"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-17": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "cato": {"status": "boarding"}, "clover": {"status": "walked"}, "coco": {"status": "boarding"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "moses": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-18": {"dogs": {"bing": {"status": "boarding"}, "cato": {"status": "boarding"}, "coco": {"status": "boarding"}}}, "2026-04-19": {"dogs": {"bing": {"status": "boarding"}, "cato": {"status": "boarding"}, "coco": {"status": "boarding"}}}, "2026-04-20": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "cato": {"status": "boarding"}, "clover": {"status": "walked"}, "coco": {"status": "boarding"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-21": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}}}, "2026-04-22": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "walked"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-23": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "boarding"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "boarding"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}}}, "2026-04-24": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "boarding"}, "bing": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "boarding"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "boarding"}, "yopo": {"status": "walked"}}}, "2026-04-25": {"dogs": {"balu": {"status": "boarding"}, "maya": {"status": "boarding"}, "teddy": {"status": "boarding"}}}, "2026-04-26": {"dogs": {"balu": {"status": "boarding"}, "maya": {"status": "boarding"}, "teddy": {"status": "boarding"}}}, "2026-04-27": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "boarding"}, "bing": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "boarding"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "boarding"}, "yopo": {"status": "walked"}}}, "2026-04-28": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "boarding"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "boarding"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "walked"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-29": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "boarding"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "walked"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "boarding"}, "nellie": {"status": "walked"}, "neo": {"status": "walked"}, "old_coco": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}, "2026-04-30": {"dogs": {"aspen": {"status": "walked"}, "balu": {"status": "boarding"}, "bing": {"status": "walked"}, "bob": {"status": "walked"}, "cato": {"status": "walked"}, "clover": {"status": "boarding"}, "coco": {"status": "walked"}, "flaco": {"status": "walked"}, "gigi": {"status": "walked"}, "jimmy": {"status": "walked"}, "lara": {"status": "walked"}, "lulu": {"status": "walked"}, "maya": {"status": "boarding"}, "neo": {"status": "walked"}, "pierre": {"status": "walked"}, "pistacho": {"status": "boarding"}, "purdey": {"status": "walked"}, "rey": {"status": "walked"}, "river": {"status": "walked"}, "snoopy": {"status": "walked"}, "teddy": {"status": "walked"}, "yopo": {"status": "walked"}}}};
+
+const app = initializeApp(window.FIREBASE_CONFIG);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const logEl = document.getElementById('log');
+const log = m => { logEl.textContent += "\n" + m; logEl.scrollTop = logEl.scrollHeight; };
+let ready = false;
+
+onAuthStateChanged(auth, u => { if(u){ ready=true; log("✅ Auth OK · uid " + u.uid.slice(0,8) + "…"); } });
+signInAnonymously(auth).catch(e => log("❌ Auth error: " + e.message));
+
+async function commitChunks(ops){
+  const CHUNK = 400;
+  for(let i=0; i<ops.length; i+=CHUNK){
+    const batch = writeBatch(db);
+    ops.slice(i, i+CHUNK).forEach(o => batch.set(o.ref, o.data));  // overwrite (sin merge)
+    await batch.commit();
+    log(`   …${Math.min(i+CHUNK, ops.length)}/${ops.length}`);
+  }
+}
+
+async function seedDogs(){
+  const ops = Object.entries(DOGS).map(([id,d]) => ({ ref: doc(db,'dogs',id), data: d }));
+  log(`🐕 Sembrando ${ops.length} perros…`);
+  await commitChunks(ops);
+  log("✅ Perros listos.");
+}
+
+async function seedWalks(){
+  const ops = [];
+  for(const [date, day] of Object.entries(WALKS)){
+    for(const [id, v] of Object.entries(day.dogs)){
+      ops.push({ ref: doc(db,'walks',date,'dogs',id), data: {
+        status: v.status,                 // "walked" | "boarding"
+        markedAt: serverTimestamp(),
+        markedBy: 'seed'
+      }});
+    }
+  }
+  log(`📅 Sembrando ${ops.length} registros de walks (status único)…`);
+  await commitChunks(ops);
+  log("✅ Walks listos.");
+}
+
+async function seedWalksMonth(walksObj, label){
+  const ops = [];
+  for(const [date, day] of Object.entries(walksObj)){
+    for(const [id, v] of Object.entries(day.dogs)){
+      ops.push({ ref: doc(db,'walks',date,'dogs',id), data: {
+        status: v.status,                 // "walked" | "boarding"
+        markedAt: serverTimestamp(),
+        markedBy: 'seed'
+      }});
+    }
+  }
+  log(`📅 Sembrando ${ops.length} registros de walks (${label})…`);
+  await commitChunks(ops);
+  log(`✅ Walks ${label} listos.`);
+}
+async function seedWalksAbril(){ await seedWalksMonth(WALKS_ABRIL, 'Abril 2026'); }
+
+async function seedMeta(){
+  await setDoc(doc(db,'meta','main'), { lastWrite: serverTimestamp(), schemaVersion: 5 }, {merge:true});
+  log("✅ meta/main escrito (schemaVersion 5).");
+}
+
+function guard(fn){
+  return async () => {
+    if(!ready){ alert("Espera al login anónimo (mira el log)."); return; }
+    document.querySelectorAll('button').forEach(b => b.disabled = true);
+    try{ await fn(); log("🎉 Hecho."); }
+    catch(e){ log("❌ Error: " + e.message); console.error(e); }
+    document.querySelectorAll('button').forEach(b => b.disabled = false);
+  };
+}
+
+document.getElementById('btnDogs').onclick       = guard(seedDogs);
+document.getElementById('btnWalks').onclick      = guard(seedWalks);
+document.getElementById('btnWalksAbril').onclick = guard(seedWalksAbril);
+document.getElementById('btnAll').onclick        = guard(async () => { await seedDogs(); await seedWalksAbril(); await seedWalks(); await seedMeta(); });
+</script>
+</body>
+</html>

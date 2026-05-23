@@ -1,0 +1,16 @@
+{
+  "name": "CayeDJB",
+  "short_name": "CayeDJB",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f0ece6",
+  "theme_color": "#1b2e1e",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20rx='20'%20fill='%231b2e1e'/%3E%3Ctext%20x='50'%20y='70'%20font-size='58'%20text-anchor='middle'%3E%F0%9F%90%BE%3C/text%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

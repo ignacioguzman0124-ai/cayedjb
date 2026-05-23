@@ -1,0 +1,50 @@
+// v5.1 — 2026-05-23. Cierra explícitamente las colecciones v4 muertas.
+// Allowlist de UIDs llega en v5.2 tras capturar el UID del hermano.
+// FIREBASE v5 — ver 03_DOCS/BRIEF_HARDENING.md
+// Security Rules para Firestore — proyecto cayedjb-3d151
+// Modelo plano: dogs, walks/{fecha}/dogs, meta. Auth anónimo obligatorio.
+// HARDENING: validación de tipos en dogs, soft-delete obligatorio (delete:false),
+//            status acotado a un enum en walks.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function isAuth() { return request.auth != null; }
+
+    match /dogs/{dogId} {
+      allow read: if isAuth();
+      allow create: if isAuth()
+        && request.resource.data.name is string
+        && request.resource.data.walkRate is number
+        && request.resource.data.walkRate >= 0
+        && request.resource.data.boardingRate is number
+        && request.resource.data.boardingRate >= 0
+        && request.resource.data.active is bool
+        && (!('turn' in request.resource.data) || request.resource.data.turn in ['T1','T2','T3']);
+      allow update: if isAuth()
+        && (!('walkRate' in request.resource.data) || request.resource.data.walkRate >= 0)
+        && (!('boardingRate' in request.resource.data) || request.resource.data.boardingRate >= 0)
+        && (!('turn' in request.resource.data) || request.resource.data.turn in ['T1','T2','T3']);
+      allow delete: if false;  // soft-delete obligatorio (active=false)
+    }
+
+    match /walks/{date}/dogs/{dogId} {
+      allow read: if isAuth();
+      allow create, update: if isAuth()
+        && request.resource.data.status in ['walked','boarding'];
+      allow delete: if isAuth();  // permitido para "limpiar" marcado erróneo
+    }
+
+    match /meta/{doc} {
+      allow read, write: if isAuth();
+    }
+
+    // ── Colecciones v4 deprecadas: denegadas explícitamente (v5.1) ──
+    // Vacías en producción (verificado 2026-05-23). En rules v2 ya denegarían por
+    // defecto; el deny explícito documenta la intención y evita reaperturas accidentales.
+    match /events/{id}        { allow read, write: if false; }   // v4 deprecated
+    match /state/{doc}        { allow read, write: if false; }   // v4 deprecated
+    match /expenses/{id}      { allow read, write: if false; }   // v4 deprecated
+    match /archive/{path=**}  { allow read, write: if false; }   // v4 deprecated
+  }
+}
