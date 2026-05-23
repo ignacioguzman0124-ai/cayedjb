@@ -297,9 +297,25 @@ const S = {
 const WD = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 function pad(n){ return String(n).padStart(2,'0'); }  // función (hoisted): S.date la usa en init
-function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+// "Ahora" SIEMPRE en Europe/London, independiente de la TZ del dispositivo (criterio v5).
+// Devuelve {y, m, d} con m y d en base 1 (m: 1=enero).
+function nowLondon(){
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone:'Europe/London', year:'numeric', month:'2-digit', day:'2-digit'
+  }).formatToParts(new Date());
+  const g = t => parts.find(p=>p.type===t).value;
+  return { y:+g('year'), m:+g('month'), d:+g('day') };
+}
+function todayStr(){ const {y,m,d}=nowLondon(); return `${y}-${pad(m)}-${pad(d)}`; }   // hoy en London
+// parseYMD se queda en hora local A PROPÓSITO: solo se usa para aritmética de calendario
+// (incrementar días, comparar rangos), nunca con "now"; sus componentes (getDate/getMonth)
+// son independientes de TZ. fmtHeader NO depende de ella (ver abajo).
 function parseYMD(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
-function fmtHeader(s){ const d=parseYMD(s); return `${WD[d.getDay()]} ${d.getDate()} ${MO[d.getMonth()]} ${d.getFullYear()}`; }
+// Día de la semana TZ-independiente: se calcula en UTC desde la fecha-clave, así el header
+// muestra el día correcto sea cual sea la TZ del Mac/dispositivo.
+function fmtHeader(s){ const [y,m,d]=s.split('-').map(Number);
+  const wd=new Date(Date.UTC(y,m-1,d)).getUTCDay();
+  return `${WD[wd]} ${d} ${MO[m-1]} ${y}`; }
 function slugify(s){
   return s.toString().trim().toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
@@ -602,11 +618,10 @@ function renderInvoiceDogs(){
   if(prev && S.dogs[prev]) sel.value=prev;
 }
 (function initInvoiceDates(){
-  const d=new Date();
-  const first=`${d.getFullYear()}-${pad(d.getMonth()+1)}-01`;
-  const last=new Date(d.getFullYear(), d.getMonth()+1, 0);
-  document.getElementById('invFrom').value=first;
-  document.getElementById('invTo').value=`${last.getFullYear()}-${pad(last.getMonth()+1)}-${pad(last.getDate())}`;
+  const {y,m}=nowLondon();                     // mes actual en Europe/London
+  const lastDay=new Date(y, m, 0).getDate();   // día 0 del mes (1-based m) siguiente = último del actual
+  document.getElementById('invFrom').value=`${y}-${pad(m)}-01`;
+  document.getElementById('invTo').value=`${y}-${pad(m)}-${pad(lastDay)}`;
 })();
 
 document.getElementById('invCalc').addEventListener('click', calcInvoice);
