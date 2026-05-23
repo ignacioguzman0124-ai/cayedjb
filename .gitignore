@@ -1,0 +1,16 @@
+# dependencias
+node_modules/
+
+# CREDENCIALES — nunca commitear el service account
+scripts/serviceAccount.json
+scripts/service-account.json
+*serviceAccount*.json
+*-adminsdk-*.json
+.env
+.env.*
+
+# backups locales (van a _ARCHIVE, fuera del repo)
+backups/
+
+# basura del SO
+.DS_Store

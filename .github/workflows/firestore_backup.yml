@@ -1,0 +1,104 @@
+name: Firestore weekly backup
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'      # cada lunes a las 03:00 UTC
+  workflow_dispatch: {}       # permite lanzarlo a mano desde la pestaña Actions
+
+permissions:
+  contents: write             # para hacer push a la rama backups
+  issues: write               # para abrir issue si falla
+
+concurrency:
+  group: firestore-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (código)
+        uses: actions/checkout@v4
+        with:
+          path: code
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        working-directory: code
+        run: npm ci || npm install
+
+      - name: Exportar Firestore a JSON
+        working-directory: code
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/backup_firestore.js "$GITHUB_WORKSPACE/backup.json"
+
+      - name: Commit del backup a la rama "backups"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%F)
+          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+
+          # Clona la rama backups; si no existe, crea una rama huérfana vacía.
+          if git clone --depth 1 --branch backups "$REMOTE" bk 2>/dev/null; then
+            echo "Rama backups encontrada."
+          else
+            echo "Rama backups no existe — la creo (orphan)."
+            git clone --depth 1 "$REMOTE" bk
+            cd bk
+            git checkout --orphan backups
+            git rm -rf . >/dev/null 2>&1 || true
+            cd ..
+          fi
+
+          cd bk
+          mkdir -p backups
+          cp "$GITHUB_WORKSPACE/backup.json" "backups/${DATE}.json"
+
+          # Retención: conservar solo los 12 backups más recientes (nombres YYYY-MM-DD.json
+          # ordenan cronológicamente). Borra el resto.
+          OLD=$(ls -1 backups/*.json 2>/dev/null | sort | head -n -12 || true)
+          if [ -n "${OLD}" ]; then
+            echo "Borrando backups antiguos:"; echo "${OLD}"
+            echo "${OLD}" | xargs git rm -f --quiet
+          fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Sin cambios que commitear."
+          else
+            git commit -m "backup: Firestore ${DATE}"
+            git push origin backups
+            echo "✅ Backup ${DATE}.json commiteado a la rama backups."
+          fi
+
+      - name: Abrir issue si el backup falla
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().slice(0, 10);
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `⚠️ Backup Firestore falló — ${date}`,
+              body: [
+                'El workflow de backup semanal de Firestore ha fallado.',
+                '',
+                `- Run: ${runUrl}`,
+                `- Fecha (UTC): ${date}`,
+                '',
+                'Revisa el log del run. Causas típicas: secret `FIREBASE_SERVICE_ACCOUNT_JSON` ausente/caducado, o cuota de Firestore.',
+              ].join('\n'),
+              labels: ['backup', 'bug'],
+            });
