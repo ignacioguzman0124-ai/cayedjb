@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#f0ece6" />
+<title>CayeDJB</title>
+<link rel="manifest" href="./manifest.json" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+<!-- FIREBASE v5 — ver 03_DOCS/BRIEF_CLAUDE_CODE_v5_simple.md
+     UN solo HTML responsive (móvil + PC, mismo URL).
+     Modelo plano: /dogs, /walks/{fecha}/dogs, /meta/main. LWW nativo (serverTimestamp). -->
+<script src="./firebase-config.js"></script>
+<style>
+  :root{
+    --bg:#f0ece6; --card:#fff; --card2:#fff; --line:#e8e3dc;
+    --txt:#1c1c1a; --muted:#9b9690;
+    --green:#1b2e1e;          /* verde oscuro: acento, pestaña activa, ✅ activo */
+    --green-soft:#4d9e57;     /* verde claro: detalles / hover suave */
+    --boarding-bg:#ede9fe; --boarding-fg:#6d28d9;  /* 🏠 activo (lila) */
+    --accent:#1b2e1e; --danger:#ef4444; --shadow:0 1px 3px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:'DM Sans',system-ui,sans-serif;
+    font-size:16px;line-height:1.4;}
+  body{padding-bottom:76px;max-width:680px;margin:0 auto;}
+  header{position:sticky;top:0;z-index:10;background:var(--bg);
+    border-bottom:1px solid var(--line);padding:14px 36px 10px 16px;} /* dcha 36px: hueco para el punto de sync */
+  .date-row{display:flex;align-items:center;gap:8px;}
+  .date-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;flex:1;min-width:0;text-transform:capitalize;}
+  input[type=date]{background:var(--card2);color:var(--txt);border:1px solid var(--line);
+    border-radius:8px;padding:7px 9px;font-size:15px;font-family:inherit;}
+  /* En la fila de fecha el picker puede encogerse: así las flechas nunca se
+     salen del hueco reservado y el punto de sync no queda pisado. */
+  .date-row input[type=date]{flex:0 1 auto;min-width:0;max-width:170px;}
+  /* Flechas de navegación de día (HOY) — táctiles, mínimo 44×44 */
+  .day-nav{flex:none;min-width:44px;min-height:44px;border:1px solid var(--line);
+    background:var(--card2);color:var(--txt);border-radius:8px;font-size:24px;line-height:1;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-family:inherit;padding:0 4px;}
+  .day-nav:active{transform:scale(.92);}
+  /* ── Indicador de sync: un solo punto circular, sin texto (4 estados) ──
+     Tooltip por title en hover/long-press. Reservado su hueco en el header. */
+  .sync{position:fixed;top:9px;right:8px;z-index:50;width:22px;height:22px;border-radius:50%;
+    background:#9b9690;box-shadow:var(--shadow);cursor:default;
+    display:flex;align-items:center;justify-content:center;transition:background-color .2s;}
+  .sync .check{opacity:0;color:#fff;font-size:13px;font-weight:800;line-height:1;}
+  .sync.connected{background:#1b7f3a;}                 /* 🟢 verde sólido (default) */
+  .sync.saving{background:#1d6fd1;animation:syncPulse .6s ease-in-out infinite;}  /* 🔵 azul pulsando */
+  .sync.offline{background:#eab308;}                   /* 🟡 amarillo sólido */
+  .sync.error{background:var(--danger);cursor:pointer;}/* 🔴 rojo, tap → modal */
+  .sync.saved{background:#1b7f3a;}                      /* verde + ✓ fugaz tras guardar */
+  .sync.saved .check{opacity:1;}
+  @keyframes syncPulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  /* ── Gate de PIN ── */
+  .pin-gate{position:fixed;inset:0;z-index:200;background:var(--bg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;}
+  .pin-gate h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin:0;}
+  .pin-gate p{color:var(--muted);margin:0 0 4px;font-size:14px;}
+  .pin-input{width:200px;text-align:center;letter-spacing:8px;font-size:24px;font-weight:700;
+    background:var(--card);color:var(--txt);border:2px solid var(--line);border-radius:12px;
+    padding:14px;font-family:inherit;}
+  .pin-input:focus{outline:none;border-color:var(--green-soft);}
+  .pin-btn{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px 22px;
+    font-size:17px;font-weight:700;cursor:pointer;width:200px;}
+  .pin-btn:disabled{opacity:.45;cursor:default;}
+  .pin-msg{min-height:20px;font-size:14px;font-weight:600;color:var(--danger);text-align:center;}
+
+  /* ── Modal de confirmación destructiva ── */
+  .modal-back{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.45);
+    display:flex;align-items:center;justify-content:center;padding:24px;}
+  .modal-card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:20px;max-width:340px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.2);}
+  .modal-card h3{font-family:'Playfair Display',serif;margin:0 0 8px;font-size:19px;}
+  .modal-card p{margin:0 0 16px;color:var(--txt);font-size:15px;line-height:1.5;}
+  .modal-actions{display:flex;gap:10px;}
+  .modal-actions .btn{flex:1;}
+
+  main{padding:8px 12px 12px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* ── HOY ── */
+  .dog-row{display:flex;align-items:center;gap:10px;background:var(--card);
+    border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin:8px 0;box-shadow:var(--shadow);}
+  .dog-main{flex:1;min-width:0;}
+  .dog-name{font-size:17px;font-weight:600;}
+  .dog-turn{font-size:11px;color:var(--muted);margin-top:2px;}  /* turno · horario bajo el nombre */
+  .toggle{border:2px solid var(--line);background:var(--card2);color:var(--muted);
+    border-radius:10px;min-width:52px;height:46px;font-size:22px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:all .12s;user-select:none;}
+  .toggle:active{transform:scale(.92);}
+  .toggle.walked.on{background:var(--green);border-color:var(--green);color:#fff;}
+  .toggle.boarding.on{background:var(--boarding-bg);border-color:var(--boarding-fg);color:var(--boarding-fg);}
+  .empty{color:var(--muted);text-align:center;padding:40px 10px;}
+
+  /* ── FACTURA ── */
+  .field{margin:12px 0;}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;font-weight:600;}
+  select,.txtin{width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);
+    border-radius:8px;padding:11px;font-size:16px;font-family:inherit;}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px 16px;
+    font-size:16px;font-weight:700;cursor:pointer;width:100%;}
+  .btn:active{filter:brightness(.9);}
+  .btn.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line);}
+  .btn.danger{background:transparent;color:var(--danger);border:1px solid var(--danger);}
+  .row2{display:flex;gap:10px;}
+  .row2>*{flex:1;}
+  .invoice{background:var(--card);border:1px solid var(--line);border-radius:11px;
+    padding:16px;margin-top:16px;box-shadow:var(--shadow);}
+  .invoice h3{font-family:'Playfair Display',serif;margin:0 0 12px;font-size:19px;font-weight:700;}
+  .line{display:flex;justify-content:space-between;padding:5px 0;font-size:16px;}
+  .line .calc{color:var(--muted);}
+  .total{border-top:1px solid var(--line);margin-top:8px;padding-top:10px;
+    font-family:'Playfair Display',serif;font-size:22px;font-weight:800;display:flex;justify-content:space-between;}
+  .dates{margin-top:14px;}
+  .dates summary{cursor:pointer;font-weight:600;color:var(--muted);font-size:14px;padding:4px 0;}
+  .dates .list{font-size:14px;color:var(--txt);padding:6px 0 2px;line-height:1.7;word-spacing:2px;}
+  /* Modal de exportar Excel */
+  .ex-check{display:flex;align-items:center;gap:9px;font-size:15px;color:var(--txt);
+    font-weight:500;margin:7px 0;cursor:pointer;}
+  .ex-check input{width:18px;height:18px;flex:none;}
+
+  /* ── Calendario mensual (Factura): vista por perro · ✅ paseo · 🏠 boarding ── */
+  .cal{margin-top:16px;}
+  .cal-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .cal-title{flex:1;text-align:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:700;text-transform:capitalize;}
+  .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
+  .cal-dow>div{text-align:center;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-loading{grid-column:1/-1;text-align:center;color:var(--muted);font-size:14px;padding:22px 0;}
+  .cal-blank{min-height:0;}
+  .cal-cell{border-radius:9px;padding:7px;min-height:54px;border:2px solid transparent;background:var(--card2);
+    box-shadow:var(--shadow);display:flex;flex-direction:column;cursor:pointer;transition:all .14s;}
+  .cal-cell:not(.wkc):hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.07);}
+  .cal-cell.today{border-color:#1b2e1e;box-shadow:0 0 0 3px rgba(27,46,30,.13);}
+  .cal-cell.wkc{background:#f8fafc;opacity:.6;cursor:default;}    /* fin de semana: tenue, no clickeable */
+  .cal-cell.s-walked{background:#f0fdf4;}                          /* paseo: verde claro */
+  .cal-cell.s-boarding{background:#eff6ff;}                        /* boarding: azul claro */
+  .cal-num{font-size:12px;font-weight:700;color:var(--muted);}    /* sin estado → número gris claro */
+  .cal-cell.s-walked .cal-num{color:#15803d;}
+  .cal-cell.s-boarding .cal-num{color:#1d4ed8;}
+  .cal-ic{margin-top:auto;align-self:center;font-size:18px;line-height:1;padding-top:2px;}
+
+  /* ── PERROS ── */
+  .perro{background:var(--card);border:1px solid var(--line);border-radius:11px;
+    padding:12px;margin:8px 0;box-shadow:var(--shadow);}
+  .perro.inactive{opacity:.5;}
+  .perro .top{display:flex;align-items:center;gap:8px;}
+  .perro .pn{flex:1;font-size:17px;font-weight:600;}
+  .perro .rates{color:var(--muted);font-size:14px;margin-top:4px;}
+  .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;
+    background:var(--card2);border:1px solid var(--line);color:var(--muted);}
+  .badge.tb{margin-left:2px;}                                   /* badge de turno en la lista de Perros */
+  .badge.warn{color:#b45309;background:#fffbeb;border-color:#fbbf24;}  /* ⚠ sin turno */
+  .mini{background:var(--card2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:7px 11px;font-size:14px;font-weight:600;cursor:pointer;}
+  .mini.danger{color:var(--danger);border-color:var(--danger);}
+  .editbox{display:flex;gap:8px;margin-top:10px;align-items:flex-end;flex-wrap:wrap;}
+  .editbox .field{margin:0;flex:1;min-width:90px;}
+  .add-form{background:var(--card);border:1px dashed var(--line);border-radius:11px;
+    padding:14px;margin:16px 0;}
+  .add-form h3{margin:0 0 6px;font-size:16px;}
+  .sectitle{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.5px;margin:18px 4px 4px;}
+
+  /* ── Tab bar ── */
+  nav{position:fixed;bottom:0;left:0;right:0;z-index:20;display:flex;
+    background:var(--card);border-top:1px solid var(--line);max-width:680px;margin:0 auto;}
+  nav button{flex:1;background:none;border:none;color:var(--muted);padding:11px 4px 14px;
+    font-size:12px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;gap:3px;font-family:inherit;}
+  nav button .ic{font-size:22px;}
+  nav button.active{color:var(--accent);}
+  .hint{color:var(--muted);font-size:13px;margin:6px 4px;}
+</style>
+</head>
+<body>
+  <!-- Gate de PIN (§1): bloquea la app por dispositivo+sesión. No afecta a Firestore. -->
+  <div id="pinGate" class="pin-gate">
+    <h1>CayeDJB</h1>
+    <p>Introduce el PIN</p>
+    <input id="pinInput" class="pin-input" type="password" inputmode="numeric"
+           autocomplete="off" maxlength="8" aria-label="PIN" />
+    <button id="pinBtn" class="pin-btn">Entrar</button>
+    <div id="pinMsg" class="pin-msg"></div>
+  </div>
+
+  <!-- Punto de montaje del modal de confirmación (§6) -->
+  <div id="modalRoot"></div>
+
+  <div id="sync" class="sync"></div>
+
+  <header>
+    <div class="date-row">
+      <div id="dateTitle" class="date-title">Cargando…</div>
+      <button type="button" id="dayPrev" class="day-nav" aria-label="Día anterior">‹</button>
+      <input type="date" id="datePicker" />
+      <button type="button" id="dayNext" class="day-nav" aria-label="Día siguiente">›</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HOY -->
+    <section id="panel-hoy" class="panel active">
+      <div id="hoyList"></div>
+    </section>
+
+    <!-- FACTURA -->
+    <section id="panel-factura" class="panel">
+      <div class="field">
+        <label>Perro</label>
+        <select id="invDog"></select>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Desde</label><input type="date" id="invFrom" class="txtin" /></div>
+        <div class="field"><label>Hasta</label><input type="date" id="invTo" class="txtin" /></div>
+      </div>
+      <div class="row2">
+        <button class="btn" id="invCalc">Calcular</button>
+        <button class="btn sec" id="invExport">📥 Exportar Excel</button>
+      </div>
+      <div id="invResult"></div>
+    </section>
+
+    <!-- PERROS -->
+    <section id="panel-perros" class="panel">
+      <div class="add-form">
+        <h3>➕ Nuevo perro</h3>
+        <div class="field"><label>Nombre</label><input type="text" id="newName" class="txtin" placeholder="Ej: Pierre" /></div>
+        <div class="row2">
+          <div class="field"><label>£ paseo</label><input type="number" id="newWalk" class="txtin" value="30" step="0.01" min="0" /></div>
+          <div class="field"><label>£ noche</label><input type="number" id="newBoard" class="txtin" value="60" step="0.01" min="0" /></div>
+        </div>
+        <div class="field"><label>Turno</label>
+          <select id="newTurn">
+            <option value="T1">T1 — 8:15-9:30</option>
+            <option value="T2">T2 — 11:20-12:30</option>
+            <option value="T3">T3 — 13:30-14:30</option>
+          </select>
+          <div class="hint" style="margin:4px 0 0;">T1+T2 = mañana · T3 = tarde</div>
+        </div>
+        <button class="btn" id="addDog">Añadir perro</button>
+      </div>
+
+      <button class="btn sec" id="btnBackup" style="margin:4px 0 2px;">💾 Descargar backup JSON</button>
+      <div class="hint" id="backupHint">Descarga toda la base (perros + paseos + meta) en un archivo.</div>
+
+      <div class="sectitle">Perros</div>
+      <div id="perrosList"></div>
+
+      <details class="dates" id="historicoBox" style="margin-top:18px;">
+        <summary id="historicoSummary">Histórico (0 inactivos)</summary>
+        <div id="historicoList" style="padding-top:6px;"></div>
+      </details>
+    </section>
+  </main>
+
+  <nav>
+    <button data-tab="hoy" class="active"><span class="ic">📋</span>HOY</button>
+    <button data-tab="factura"><span class="ic">🧾</span>Factura</button>
+    <button data-tab="perros"><span class="ic">🐕</span>Perros</button>
+  </nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  doc, collection, getDoc, getDocs, setDoc, deleteDoc, onSnapshot, onSnapshotsInSync, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+/* ── Init ── */
+const app = initializeApp(window.FIREBASE_CONFIG);
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+}); // persistencia offline activada (criterio 8)
+const auth = getAuth(app);
+
+/* ── Estado ── */
+const S = {
+  uid: null,
+  dogs: {},            // dogId -> {name, walkRate, boardingRate, active}
+  date: todayStr(),    // fecha seleccionada (YYYY-MM-DD)
+  snap: {},            // dogId -> status ("walked"|"boarding")  (fecha actual, desde Firestore)
+  pending: {},         // dogId -> status ("walked"|"boarding"|null)  (override optimista; null = vacío)
+  unsubWalks: null,
+  editing: null,       // dogId en edición (pestaña Perros)
+};
+
+/* ── Helpers fecha / texto / dinero ── */
+const WD = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function pad(n){ return String(n).padStart(2,'0'); }  // función (hoisted): S.date la usa en init
+function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function parseYMD(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function fmtHeader(s){ const d=parseYMD(s); return `${WD[d.getDay()]} ${d.getDate()} ${MO[d.getMonth()]} ${d.getFullYear()}`; }
+function slugify(s){
+  return s.toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+}
+function money(n){
+  const r = Math.round(n*100)/100;
+  const s = (r % 1 === 0)
+    ? r.toLocaleString('en-GB')
+    : r.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return '£'+s;
+}
+/* ── Turnos ──────────────────────────────────────────────────────────
+   Los horarios son FIJOS en código (no en Firestore). El perro guarda
+   solo el código de turno en /dogs.turn. T1+T2 = mañana · T3 = tarde. */
+const TURNS = { T1:'8:15-9:30', T2:'11:20-12:30', T3:'13:30-14:30' };
+const TURN_ORDER = { T1:0, T2:1, T3:2 };
+function hasTurn(d){ return !!(d && d.turn && TURNS[d.turn]); }  // turno válido asignado
+function effTurn(d){ return hasTurn(d) ? d.turn : 'T1'; }        // default T1 si falta (no debería tras migración)
+
+function activeDogsSorted(){
+  return Object.entries(S.dogs)
+    .filter(([,d])=>d.active!==false)
+    .map(([id,d])=>({id,...d}))
+    .sort((a,b)=>a.name.localeCompare(b.name,'es'));
+}
+// HOY: orden por turno (T1→T2→T3) y, dentro de cada turno, alfabético por nombre.
+// Lista continua, sin separadores ni encabezados.
+function activeDogsByTurn(){
+  return Object.entries(S.dogs)
+    .filter(([,d])=>d.active!==false)
+    .map(([id,d])=>({id,...d}))
+    .sort((a,b)=>{
+      const t = TURN_ORDER[effTurn(a)] - TURN_ORDER[effTurn(b)];
+      return t!==0 ? t : a.name.localeCompare(b.name,'es');
+    });
+}
+function allDogsSorted(){
+  return Object.entries(S.dogs)
+    .map(([id,d])=>({id,...d}))
+    .sort((a,b)=>a.name.localeCompare(b.name,'es'));
+}
+
+/* ── Indicador de sync (§7): 4 estados, siempre visible ──
+   🟢 Conectado · 🔵 Guardando… · 🟡 Offline · 🔴 Error (click → detalle) */
+const sync = { online: navigator.onLine, _pw:false, _pd:false, error:null };
+let _wasPending=false, _savedUntil=0, _savedTimer=null;
+function renderSync(){
+  const el=document.getElementById('sync'); if(!el) return;
+  const pending = sync._pw || sync._pd;
+  let cls, tip;
+  if(sync.error){ cls='error'; tip='Error · toca para detalles'; }
+  else if(!sync.online){ cls='offline'; tip='Offline'; }
+  else if(pending){ cls='saving'; tip='Guardando…'; }
+  else { cls='connected'; tip='Conectado'; }
+  // ✓ fugaz (300ms) al confirmar una escritura: transición Guardando→Conectado sin error.
+  const now=Date.now();
+  if(_wasPending && !pending && !sync.error && sync.online) _savedUntil = now + 300;
+  _wasPending = pending;
+  const showCheck = (cls==='connected') && (_savedUntil > now);
+  el.className = 'sync ' + cls + (showCheck ? ' saved' : '');
+  el.title = tip;                                  // tooltip hover/long-press
+  el.innerHTML = '<span class="check">✓</span>';
+  if(showCheck){ clearTimeout(_savedTimer); _savedTimer=setTimeout(renderSync, (_savedUntil-now)+30); }
+}
+function setError(msg){ sync.error = String(msg||'Error de sincronización'); renderSync(); }
+function clearError(){ if(sync.error){ sync.error=null; renderSync(); } }
+// Compat con las acciones de escritura: feedback optimista inmediato.
+function setSync(state){
+  if(state==='saving'){ sync._pd=true; clearError(); }
+  // 'saved' lo confirma la metadata real de los listeners (hasPendingWrites=false).
+  renderSync();
+}
+window.addEventListener('online',  ()=>{ sync.online=true;  renderSync(); });
+window.addEventListener('offline', ()=>{ sync.online=false; renderSync(); });
+document.getElementById('sync').addEventListener('click', ()=>{
+  if(sync.error) infoModal('Error de sincronización', sync.error);
+});
+renderSync(); // estado inicial visible desde el arranque
+
+/* ── Gate de PIN (§1) ──────────────────────────────────────────────
+   PIN 241333. No se guarda en claro: se compara el SHA-256 (hex).
+   Éxito → flag en sessionStorage (re-PIN al cerrar el navegador).
+   3 fallos seguidos → bloqueo 30s. Es local al dispositivo: no toca Firestore. */
+const PIN_HASH = '85dd4e5e68e838c45d94725d38938da269196791804ffbb13d316558fa34743f'; // SHA-256("241333")
+const PIN_OK_KEY = 'cayedjb_pin_ok';
+const PIN_FAILS_KEY = 'cayedjb_pin_fails';
+const PIN_LOCK_KEY = 'cayedjb_pin_lock_until';
+const LOCK_MS = 30000;
+
+async function sha256hex(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+let appStarted = false;
+function startApp(){
+  if(appStarted) return; appStarted = true;
+  /* Arranque real: auth anónima + listeners. */
+  onAuthStateChanged(auth, user=>{
+    if(!user) return;
+    S.uid = user.uid;
+    document.getElementById('datePicker').value = S.date;
+    document.getElementById('dateTitle').textContent = fmtHeader(S.date);
+    listenDogs();
+    listenWalks(S.date);
+  });
+  onSnapshotsInSync(db, ()=>{ /* listeners al día → confirma estado */ if(sync.online) clearError(); });
+  signInAnonymously(auth).catch(e=>{
+    setError('No se pudo iniciar sesión: '+e.message);
+    document.getElementById('hoyList').innerHTML =
+      `<div class="empty">Error de conexión: ${escapeHtml(e.message)}</div>`;
+  });
+}
+
+function initPinGate(){
+  const gate = document.getElementById('pinGate');
+  const input = document.getElementById('pinInput');
+  const btn = document.getElementById('pinBtn');
+  const msg = document.getElementById('pinMsg');
+
+  // Ya validado en esta sesión → entra directo.
+  if(sessionStorage.getItem(PIN_OK_KEY)==='1'){ gate.remove(); startApp(); return; }
+
+  let lockTimer=null;
+  function lockedRemaining(){
+    const until = parseInt(sessionStorage.getItem(PIN_LOCK_KEY)||'0',10);
+    return Math.max(0, until - Date.now());
+  }
+  function tickLock(){
+    const rem = lockedRemaining();
+    if(rem<=0){ clearInterval(lockTimer); lockTimer=null; btn.disabled=false; input.disabled=false; msg.textContent=''; input.focus(); return; }
+    btn.disabled=true; input.disabled=true;
+    msg.textContent = `Demasiados intentos. Espera ${Math.ceil(rem/1000)}s.`;
+  }
+  function startLock(){
+    sessionStorage.setItem(PIN_LOCK_KEY, String(Date.now()+LOCK_MS));
+    if(!lockTimer) lockTimer=setInterval(tickLock, 250);
+    tickLock();
+  }
+  if(lockedRemaining()>0) startLock();
+
+  async function tryPin(){
+    if(lockedRemaining()>0) return;
+    const val = input.value.trim();
+    if(!/^\d{4,8}$/.test(val)){ msg.textContent='El PIN son de 4 a 8 dígitos.'; return; }
+    btn.disabled=true;
+    const ok = (await sha256hex(val)) === PIN_HASH;
+    btn.disabled=false;
+    if(ok){
+      sessionStorage.setItem(PIN_OK_KEY,'1');
+      sessionStorage.removeItem(PIN_FAILS_KEY);
+      sessionStorage.removeItem(PIN_LOCK_KEY);
+      gate.remove();
+      startApp();
+      return;
+    }
+    const fails = (parseInt(sessionStorage.getItem(PIN_FAILS_KEY)||'0',10) + 1);
+    sessionStorage.setItem(PIN_FAILS_KEY, String(fails));
+    input.value='';
+    if(fails>=3){ sessionStorage.setItem(PIN_FAILS_KEY,'0'); startLock(); }
+    else { msg.textContent = `PIN incorrecto. Te quedan ${3-fails} intento(s).`; input.focus(); }
+  }
+  btn.addEventListener('click', tryPin);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') tryPin(); });
+  input.focus();
+}
+initPinGate();
+
+/* ── Listener: dogs ── */
+function listenDogs(){
+  onSnapshot(collection(db,'dogs'), { includeMetadataChanges:true },
+    snap=>{
+      sync._pd = snap.metadata.hasPendingWrites;
+      if(!snap.metadata.fromCache && sync.online) clearError();
+      S.dogs = {};
+      snap.forEach(d=>{ S.dogs[d.id] = d.data(); });
+      renderHoy();
+      renderInvoiceDogs();
+      renderPerros();
+      renderSync();
+    },
+    err=>setError('dogs: '+err.message)
+  );
+}
+
+/* ── Listener: walks de la fecha actual ── */
+function listenWalks(date){
+  if(S.unsubWalks) S.unsubWalks();
+  S.snap = {};
+  S.pending = {};
+  S.unsubWalks = onSnapshot(
+    collection(db,'walks',date,'dogs'),
+    { includeMetadataChanges:true },
+    snap=>{
+      if(date!==S.date) return; // ignora snapshots de una fecha ya cambiada
+      S.snap = {};
+      snap.forEach(d=>{ const v=d.data(); if(v.status) S.snap[d.id]=v.status; });
+      // limpia overrides ya confirmados por el servidor
+      for(const id of Object.keys(S.pending)){
+        const sv = S.snap[id] || null;
+        if(!snap.metadata.hasPendingWrites && S.pending[id]===sv)
+          delete S.pending[id];
+      }
+      sync._pw = snap.metadata.hasPendingWrites;
+      if(!snap.metadata.fromCache && sync.online) clearError();
+      renderSync();
+      renderHoy();
+    },
+    err=>setError('walks: '+err.message)
+  );
+}
+
+// estado efectivo del perro hoy: "walked" | "boarding" | null (vacío)
+function eff(id){ return (id in S.pending) ? S.pending[id] : (S.snap[id] || null); }
+
+/* ── Render: HOY ── */
+function renderHoy(){
+  document.getElementById('dateTitle').textContent = fmtHeader(S.date);
+  const dogs = activeDogsByTurn();
+  const box = document.getElementById('hoyList');
+  if(!dogs.length){ box.innerHTML='<div class="empty">No hay perros activos. Añade uno en la pestaña Perros.</div>'; return; }
+  box.innerHTML = dogs.map(d=>{
+    const st=eff(d.id);   // "walked" | "boarding" | null
+    const turnLine = hasTurn(d) ? `${d.turn} · ${TURNS[d.turn]}` : '⚠ sin turno';
+    return `<div class="dog-row">
+      <div class="dog-main">
+        <div class="dog-name">${escapeHtml(d.name)}</div>
+        <div class="dog-turn">${turnLine}</div>
+      </div>
+      <button class="toggle walked ${st==='walked'?'on':''}"     data-id="${d.id}" data-s="walked"   aria-label="Paseado">✅</button>
+      <button class="toggle boarding ${st==='boarding'?'on':''}" data-id="${d.id}" data-s="boarding" aria-label="Boarding">🏠</button>
+    </div>`;
+  }).join('');
+}
+
+/* ── Toggle + escritura debounced (300ms) ── */
+const flushTimers={};
+document.getElementById('hoyList').addEventListener('click', ev=>{
+  const btn=ev.target.closest('.toggle'); if(!btn) return;
+  const id=btn.dataset.id, s=btn.dataset.s;   // "walked" | "boarding"
+  const cur=eff(id);
+  // mutuamente excluyente: pulsar el estado activo lo limpia; si no, lo fija (pisa al otro)
+  S.pending[id] = (cur===s) ? null : s;       // optimista (null = vacío)
+  renderHoy();
+  sync._pw=true; clearError(); renderSync();   // walks pending → 🔵 (lo resuelve el listener)
+  clearTimeout(flushTimers[id]);
+  flushTimers[id]=setTimeout(()=>flushWalk(id), 300);
+});
+
+async function flushWalk(id){
+  if(!(id in S.pending)) return;
+  const status=S.pending[id];                  // "walked" | "boarding" | null
+  const ref=doc(db,'walks',S.date,'dogs',id);
+  // No esperamos al servidor: con persistencia offline el write queda en cache y
+  // sincroniza al reconectar. El metadata del listener mueve "Guardando→Guardado".
+  if(status){
+    // overwrite (sin merge): un solo campo de estado, descarta walked/boarding antiguos
+    setDoc(ref, { status, markedAt:serverTimestamp(), markedBy:S.uid })
+      .catch(e=>{ console.error('write walk',e); setError('No se pudo guardar la marca: '+e.message); });
+  } else {
+    deleteDoc(ref).catch(e=>{ console.error('delete walk',e); setError('No se pudo borrar la marca: '+e.message); });  // vacío = sin doc
+  }
+  setDoc(doc(db,'meta','main'), {lastWrite:serverTimestamp(), schemaVersion:5}, {merge:true}).catch(()=>{});
+}
+
+/* ── Selector de fecha + navegación por días ── */
+function goToDate(dateStr){
+  S.date = dateStr || todayStr();
+  document.getElementById('datePicker').value = S.date;
+  document.getElementById('dateTitle').textContent = fmtHeader(S.date);
+  listenWalks(S.date);   // refresca la lista de marcados de la nueva fecha
+}
+function shiftDay(delta){
+  const d = parseYMD(S.date);
+  d.setDate(d.getDate() + delta);
+  goToDate(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);
+}
+document.getElementById('datePicker').addEventListener('change', ev=>{ goToDate(ev.target.value); });
+document.getElementById('dayPrev').addEventListener('click', ()=>shiftDay(-1));
+document.getElementById('dayNext').addEventListener('click', ()=>shiftDay(1));
+
+/* ── Tabs ── */
+document.querySelectorAll('nav button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const tab=b.dataset.tab;
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('panel-'+tab).classList.add('active');
+  });
+});
+
+/* ── FACTURA ── */
+function renderInvoiceDogs(){
+  const sel=document.getElementById('invDog');
+  const prev=sel.value;
+  sel.innerHTML = allDogsSorted().map(d=>
+    `<option value="${d.id}">${escapeHtml(d.name)}${d.active===false?' (inactivo)':''}</option>`).join('');
+  if(prev && S.dogs[prev]) sel.value=prev;
+}
+(function initInvoiceDates(){
+  const d=new Date();
+  const first=`${d.getFullYear()}-${pad(d.getMonth()+1)}-01`;
+  const last=new Date(d.getFullYear(), d.getMonth()+1, 0);
+  document.getElementById('invFrom').value=first;
+  document.getElementById('invTo').value=`${last.getFullYear()}-${pad(last.getMonth()+1)}-${pad(last.getDate())}`;
+})();
+
+document.getElementById('invCalc').addEventListener('click', calcInvoice);
+
+async function calcInvoice(){
+  const id=document.getElementById('invDog').value;
+  const from=document.getElementById('invFrom').value;
+  const to=document.getElementById('invTo').value;
+  const out=document.getElementById('invResult');
+  if(!id || !from || !to){ out.innerHTML='<div class="hint">Selecciona perro y fechas.</div>'; return; }
+  if(parseYMD(from) > parseYMD(to)){ out.innerHTML='<div class="hint">La fecha "Desde" es posterior a "Hasta".</div>'; return; }
+  const dog=S.dogs[id];
+  out.innerHTML='<div class="hint">Calculando…</div>';
+
+  const dates=[]; for(let d=parseYMD(from), end=parseYMD(to); d<=end; d.setDate(d.getDate()+1))
+    dates.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);
+
+  const results = await Promise.all(dates.map(async dt=>{
+    try{ const snap=await getDoc(doc(db,'walks',dt,'dogs',id));
+      return {dt, v: snap.exists()?snap.data():null}; }
+    catch(e){ return {dt, v:null}; }
+  }));
+
+  const walkDates=[], boardDates=[];
+  results.forEach(r=>{ if(!r.v) return;
+    if(r.v.status==='walked')   walkDates.push(r.dt);
+    if(r.v.status==='boarding') boardDates.push(r.dt);
+  });
+
+  const wTotal=walkDates.length*dog.walkRate;
+  const bTotal=boardDates.length*dog.boardingRate;
+
+  out.innerHTML=`<div class="invoice">
+    <h3>${escapeHtml(dog.name)} · ${from} → ${to}</h3>
+    <div class="line"><span>Paseos</span><span class="calc">${walkDates.length} × ${money(dog.walkRate)} = ${money(wTotal)}</span></div>
+    <div class="line"><span>Boarding</span><span class="calc">${boardDates.length} × ${money(dog.boardingRate)} = ${money(bTotal)}</span></div>
+    <div class="total"><span>TOTAL</span><span>${money(wTotal+bTotal)}</span></div>
+    <div id="invCal" class="cal"></div>
+  </div>
+  <div class="hint">Calendario de ${escapeHtml(dog.name)}: ✅ paseo · 🏠 boarding. Estado único por día (boarding gana).</div>`;
+
+  // Calendario mensual: arranca en el mes del "Desde". Datos frescos por cálculo.
+  for(const k of Object.keys(calCache)) delete calCache[k];
+  calState.id = id;
+  calState.year = +from.slice(0,4);
+  calState.month = +from.slice(5,7) - 1;   // 0-11
+  renderCalendar();
+}
+
+/* ── Calendario mensual del perro seleccionado (pestaña Factura) ─────
+   Reemplaza las dos listas de fechas. Vista por perro: ✅ paseo · 🏠 boarding
+   (estado único por día). Navegación de meses sin límite. Horarios/estilos
+   en espíritu de la app vieja (rCal / .cal-cell), minimalista. */
+const MONTHS_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const CAL_DOW = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];   // rejilla Lun→Dom
+const calState = { id:null, year:null, month:null };           // month 0-11
+const calCache = {};                                           // `${id}|${y}-${m}` -> { 'YYYY-MM-DD': 'walked'|'boarding' }
+
+// Lee el estado del perro para cada día del mes (un getDoc por día), con caché por sesión.
+async function calFetchMonth(id, year, month){
+  const key = `${id}|${year}-${month}`;
+  if(calCache[key]) return calCache[key];
+  const days = new Date(year, month+1, 0).getDate();
+  const dates = [];
+  for(let d=1; d<=days; d++) dates.push(`${year}-${pad(month+1)}-${pad(d)}`);
+  const map = {};
+  await Promise.all(dates.map(async dt=>{
+    try{ const snap=await getDoc(doc(db,'walks',dt,'dogs',id));
+      if(snap.exists() && snap.data().status) map[dt]=snap.data().status; }
+    catch(e){ /* día sin doc o sin permiso: se deja vacío */ }
+  }));
+  calCache[key] = map;
+  return map;
+}
+
+function calShift(delta){
+  let m = calState.month + delta, y = calState.year;
+  if(m<0){ m=11; y--; } else if(m>11){ m=0; y++; }
+  calState.month = m; calState.year = y;
+  renderCalendar();   // mantiene calState.id → mismo perro
+}
+
+// Click en un día (no fin de semana): mueve el filtro Desde/Hasta a ese mes completo y recalcula.
+function onCalCellClick(dk){
+  const [y,m] = dk.split('-');
+  const last = new Date(+y, +m, 0);   // último día del mes (m es 1-based)
+  document.getElementById('invFrom').value = `${y}-${m}-01`;
+  document.getElementById('invTo').value   = `${last.getFullYear()}-${pad(last.getMonth()+1)}-${pad(last.getDate())}`;
+  calcInvoice();
+}
+
+async function renderCalendar(){
+  const box = document.getElementById('invCal');
+  if(!box || !calState.id) return;
+  const { id, year, month } = calState;
+  box.innerHTML = `
+    <div class="cal-head">
+      <button type="button" class="day-nav" id="calPrev" aria-label="Mes anterior">‹</button>
+      <div class="cal-title">${MONTHS_FULL[month]} ${year}</div>
+      <button type="button" class="day-nav" id="calNext" aria-label="Mes siguiente">›</button>
+    </div>
+    <div class="cal-dow">${CAL_DOW.map(d=>`<div>${d}</div>`).join('')}</div>
+    <div class="cal-grid" id="calCells"><div class="cal-loading">Cargando…</div></div>`;
+  box.querySelector('#calPrev').addEventListener('click', ()=>calShift(-1));
+  box.querySelector('#calNext').addEventListener('click', ()=>calShift(1));
+
+  const map = await calFetchMonth(id, year, month);
+  // Si el usuario navegó (o cambió de perro) mientras cargaba, este render quedó obsoleto.
+  if(calState.id!==id || calState.year!==year || calState.month!==month) return;
+  const cells = document.getElementById('calCells');
+  if(!cells) return;
+
+  const firstDow = (new Date(year, month, 1).getDay()+6)%7;  // 0=Lunes
+  const total = new Date(year, month+1, 0).getDate();
+  const today = todayStr();
+  let html = '';
+  for(let e=0; e<firstDow; e++) html += '<div class="cal-blank"></div>';
+  for(let d=1; d<=total; d++){
+    const dk = `${year}-${pad(month+1)}-${pad(d)}`;
+    const dow = new Date(year, month, d).getDay();
+    const isWk = dow===0 || dow===6;             // Dom/Sáb
+    const st = map[dk];                          // "walked" | "boarding" | undefined
+    const icon = st==='walked'   ? '<div class="cal-ic">✅</div>'
+               : st==='boarding' ? '<div class="cal-ic">🏠</div>' : '';
+    const stCls = (!isWk && st==='walked') ? ' s-walked'
+                : (!isWk && st==='boarding') ? ' s-boarding' : '';
+    const cls = 'cal-cell'+(isWk?' wkc':'')+(dk===today?' today':'')+stCls;
+    // El icono se muestra también en fin de semana (boarding cruza el finde); la celda va atenuada por .wkc.
+    html += `<div class="${cls}" ${isWk?'':`data-dk="${dk}"`}>
+      <div class="cal-num">${d}</div>${icon}</div>`;
+  }
+  cells.innerHTML = html;
+  cells.querySelectorAll('.cal-cell[data-dk]').forEach(c=>
+    c.addEventListener('click', ()=>onCalCellClick(c.dataset.dk)));
+}
+
+/* ── Exportar a Excel (pestaña Factura) ─────────────────────────────
+   Lazy-load de SheetJS 0.18.5 desde cdnjs; estilos calcados de la app
+   vieja (doExportWithXLSX, variable ST). Solo lee /walks; no escribe nada. */
+let _xlsxLoading=false;
+function loadXLSX(cb, onErr){
+  if(window.XLSX){ cb(); return; }
+  if(_xlsxLoading){ setTimeout(()=>loadXLSX(cb,onErr),200); return; }
+  _xlsxLoading=true;
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload =()=>{ _xlsxLoading=false; cb(); };
+  s.onerror=()=>{ _xlsxLoading=false; if(onErr) onErr(); };
+  document.head.appendChild(s);
+}
+
+/* Estilos de celda (idénticos a la app vieja): cabecera #1B2E1E/blanco,
+   filas alternas blanco/#F5F5F5, total #D1FAE5, moneda £#,##0. */
+const ST={
+  title:  {font:{bold:true,sz:14,color:{rgb:"FFFFFF"}}, fill:{fgColor:{rgb:"1B2E1E"}}, alignment:{horizontal:"center"}},
+  hdr:    {font:{bold:true,sz:10,color:{rgb:"FFFFFF"}}, fill:{fgColor:{rgb:"1B2E1E"}}, alignment:{horizontal:"center"}, border:{bottom:{style:"thin",color:{rgb:"FFFFFF"}}}},
+  hdrL:   {font:{bold:true,sz:10,color:{rgb:"FFFFFF"}}, fill:{fgColor:{rgb:"1B2E1E"}}, alignment:{horizontal:"left"}},
+  dataE:  {fill:{fgColor:{rgb:"FFFFFF"}}, alignment:{horizontal:"left"}},
+  dataO:  {fill:{fgColor:{rgb:"F5F5F5"}}, alignment:{horizontal:"left"}},
+  dataER: {fill:{fgColor:{rgb:"FFFFFF"}}, alignment:{horizontal:"right"}},
+  dataOR: {fill:{fgColor:{rgb:"F5F5F5"}}, alignment:{horizontal:"right"}},
+  total:  {font:{bold:true,sz:11}, fill:{fgColor:{rgb:"D1FAE5"}}, border:{top:{style:"medium",color:{rgb:"166534"}}}},
+  totalR: {font:{bold:true,sz:11}, fill:{fgColor:{rgb:"D1FAE5"}}, alignment:{horizontal:"right"}, border:{top:{style:"medium",color:{rgb:"166534"}}}}
+};
+const MONEYFMT='"£"#,##0';
+function cell(v, s, t){
+  const c={v:v, s:s||{}};
+  c.t = t || ((typeof v==="number")?"n":"s");
+  if(typeof v==="number" && s && s.numFmt) c.z=s.numFmt;
+  return c;
+}
+function wsFromData(sheetObj){
+  const ws={}; let maxR=sheetObj.data.length, maxC=0;
+  sheetObj.data.forEach((row,r)=>{
+    if(row.length>maxC) maxC=row.length;
+    row.forEach((cellVal,c)=>{
+      const addr=window.XLSX.utils.encode_cell({r,c});
+      ws[addr] = (!cellVal||cellVal==="") ? {v:"",t:"s"} : cellVal;
+    });
+  });
+  ws["!ref"]=window.XLSX.utils.encode_range({s:{r:0,c:0},e:{r:maxR-1,c:maxC-1}});
+  if(sheetObj.cols) ws["!cols"]=sheetObj.cols;
+  const merges=[];
+  sheetObj.data.forEach((row,r)=>{
+    if(row.length>0 && row[0] && row[0].s && row[0].s===ST.title)
+      merges.push({s:{r,c:0},e:{r,c:maxC-1}});
+  });
+  if(merges.length) ws["!merges"]=merges;
+  return ws;
+}
+
+/* Lee /walks/{fecha}/dogs en el rango (un getDocs por día, en lotes de 20).
+   Devuelve byDate[fecha][dogId] = "walked" | "boarding". */
+async function gatherExportData(fromDk, toDk){
+  const dates=[];
+  for(let d=parseYMD(fromDk), end=parseYMD(toDk); d<=end; d.setDate(d.getDate()+1))
+    dates.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);
+  const byDate={}; const CH=20;
+  for(let i=0;i<dates.length;i+=CH){
+    await Promise.all(dates.slice(i,i+CH).map(async dt=>{
+      const ds=await getDocs(collection(db,'walks',dt,'dogs'));
+      const day={};
+      ds.forEach(s=>{ const v=s.data(); if(v.status) day[s.id]=v.status; });
+      byDate[dt]=day;
+    }));
+  }
+  return {dates, byDate};
+}
+
+/* Hoja Facturación: una fila por perro + fila TOTAL. */
+function buildBillingSheet(byDate, dates, dogList, fromDk, toDk){
+  const wsData=[];
+  const cols=[{wch:22},{wch:11},{wch:12},{wch:17},{wch:12},{wch:12}];
+  wsData.push([cell("Facturación — "+fromDk+" a "+toDk,ST.title),"","","","",""]);
+  wsData.push(["","","","","",""]);
+  wsData.push([
+    cell("Perro",ST.hdrL),cell("Paseos (n)",ST.hdr),cell("Paseos £",ST.hdr),
+    cell("Boarding (noches)",ST.hdr),cell("Boarding £",ST.hdr),cell("Total £",ST.hdr)
+  ]);
+  let tW=0,tWa=0,tB=0,tBa=0,tTot=0;
+  dogList.forEach((dog,ri)=>{
+    let wN=0,bN=0;
+    dates.forEach(dt=>{ const st=byDate[dt]&&byDate[dt][dog.id]; if(st==='walked')wN++; else if(st==='boarding')bN++; });
+    const wA=wN*dog.walkRate, bA=bN*dog.boardingRate, tot=wA+bA;
+    const bgR=ri%2===0?ST.dataER:ST.dataOR;
+    const mFmt=Object.assign({},bgR,{numFmt:MONEYFMT});
+    wsData.push([
+      cell(dog.name, ri%2===0?ST.dataE:ST.dataO),
+      cell(wN,bgR,"n"),cell(wA,mFmt,"n"),
+      cell(bN,bgR,"n"),cell(bA,mFmt,"n"),cell(tot,mFmt,"n")
+    ]);
+    tW+=wN;tWa+=wA;tB+=bN;tBa+=bA;tTot+=tot;
+  });
+  const tFmt=Object.assign({},ST.totalR,{numFmt:MONEYFMT});
+  wsData.push([
+    cell("TOTAL",ST.total),cell(tW,ST.totalR,"n"),cell(tWa,tFmt,"n"),
+    cell(tB,ST.totalR,"n"),cell(tBa,tFmt,"n"),cell(tTot,tFmt,"n")
+  ]);
+  return {data:wsData, cols, name:"Facturacion"};
+}
+
+/* Hoja Asistencia: matriz fecha × perro, una fila por combinación, fecha asc. */
+function buildAttSheet(byDate, dates, dogList, fromDk, toDk){
+  const wsData=[];
+  const cols=[{wch:12},{wch:8},{wch:18},{wch:11},{wch:13}];
+  wsData.push([cell("Asistencia diaria — "+fromDk+" a "+toDk,ST.title),"","","",""]);
+  wsData.push(["","","","",""]);
+  wsData.push([
+    cell("Fecha",ST.hdrL),cell("Día",ST.hdr),cell("Perro",ST.hdrL),
+    cell("Estado",ST.hdr),cell("Tarifa día £",ST.hdr)
+  ]);
+  let ri=0;
+  dates.forEach(dt=>{
+    const dow=WD[parseYMD(dt).getDay()].slice(0,3);
+    dogList.forEach(dog=>{
+      const st=byDate[dt]&&byDate[dt][dog.id];
+      const estado= st==='walked'?'Paseo':(st==='boarding'?'Boarding':'—');
+      const rate  = st==='walked'?dog.walkRate:(st==='boarding'?dog.boardingRate:0);
+      const bg=ri%2===0?ST.dataE:ST.dataO, bgR=ri%2===0?ST.dataER:ST.dataOR;
+      const stC = estado==='Paseo'    ? Object.assign({},bg,{font:{color:{rgb:"166534"}}})
+                : estado==='Boarding' ? Object.assign({},bg,{font:{color:{rgb:"6D28D9"}}})
+                : bg;
+      wsData.push([
+        cell(dt,bg),cell(dow,bg),cell(dog.name,bg),
+        cell(estado,stC),cell(rate,Object.assign({},bgR,{numFmt:MONEYFMT}),"n")
+      ]);
+      ri++;
+    });
+  });
+  return {data:wsData, cols, name:"Asistencia"};
+}
+
+/* Hoja Tarifas: perro + tarifa de paseo y de boarding. */
+function buildRatesSheet(dogList){
+  const wsData=[];
+  const cols=[{wch:20},{wch:12},{wch:14}];
+  wsData.push([cell("Tarifas por perro",ST.title),"",""]);
+  wsData.push(["","",""]);
+  wsData.push([cell("Perro",ST.hdrL),cell("Paseo £",ST.hdr),cell("Boarding £",ST.hdr)]);
+  dogList.forEach((dog,ri)=>{
+    const bgR=ri%2===0?ST.dataER:ST.dataOR;
+    const mFmt=Object.assign({},bgR,{numFmt:MONEYFMT});
+    wsData.push([cell(dog.name, ri%2===0?ST.dataE:ST.dataO),cell(dog.walkRate,mFmt,"n"),cell(dog.boardingRate,mFmt,"n")]);
+  });
+  return {data:wsData, cols, name:"Tarifas"};
+}
+
+function fileSafe(name){ return String(name).normalize('NFC').replace(/[^A-Za-z0-9À-ÿ]+/g,'') || 'Perro'; }
+function exBtnMsg(btn, msg, color){
+  btn.textContent=msg; btn.style.background=color;
+  setTimeout(()=>{ btn.textContent='Descargar Excel'; btn.style.background=''; }, 1900);
+}
+
+function openExportModal(){
+  const root=document.getElementById('modalRoot');
+  const from=document.getElementById('invFrom').value||'';
+  const to  =document.getElementById('invTo').value||'';
+  const dogOpts=allDogsSorted().map(d=>
+    `<option value="${d.id}">${escapeHtml(d.name)}${d.active===false?' (inactivo)':''}</option>`).join('');
+  root.innerHTML=`<div class="modal-back"><div class="modal-card" role="dialog" aria-modal="true">
+    <h3>📥 Exportar Excel</h3>
+    <div class="row2">
+      <div class="field"><label>Desde</label><input type="date" id="exFrom" class="txtin" value="${from}"></div>
+      <div class="field"><label>Hasta</label><input type="date" id="exTo" class="txtin" value="${to}"></div>
+    </div>
+    <div class="field"><label>Perro</label>
+      <select id="exDog"><option value="">Todos los perros</option>${dogOpts}</select>
+    </div>
+    <div class="field"><label>Hojas a incluir</label>
+      <label class="ex-check"><input type="checkbox" id="exShBill" checked> Facturación (resumen por perro)</label>
+      <label class="ex-check"><input type="checkbox" id="exShAtt" checked> Asistencia diaria (matriz fecha-perro-estado)</label>
+      <label class="ex-check"><input type="checkbox" id="exShRates"> Tarifas (perros con £ paseo y £ noche)</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn sec" id="exCancel">Cancelar</button>
+      <button class="btn" id="exGo">Descargar Excel</button>
+    </div>
+  </div></div>`;
+  const close=()=>{ root.innerHTML=''; };
+  root.querySelector('#exCancel').addEventListener('click', close);
+  root.querySelector('.modal-back').addEventListener('click', e=>{ if(e.target.classList.contains('modal-back')) close(); });
+  root.querySelector('#exGo').addEventListener('click', doExport);
+}
+
+async function doExport(){
+  const go=document.getElementById('exGo');
+  const fromDk=document.getElementById('exFrom').value;
+  const toDk  =document.getElementById('exTo').value;
+  const dogId =document.getElementById('exDog').value;
+  if(!fromDk || !toDk){ exBtnMsg(go,'Pon ambas fechas','#b91c1c'); return; }
+  if(parseYMD(fromDk) > parseYMD(toDk)){ exBtnMsg(go,'Rango inválido','#b91c1c'); return; }
+  const wantBill =document.getElementById('exShBill').checked;
+  const wantAtt  =document.getElementById('exShAtt').checked;
+  const wantRates=document.getElementById('exShRates').checked;
+  if(!wantBill && !wantAtt && !wantRates){ exBtnMsg(go,'Elige una hoja','#b91c1c'); return; }
+  const dogList = dogId
+    ? (S.dogs[dogId] ? [{id:dogId, ...S.dogs[dogId]}] : [])
+    : activeDogsSorted();
+  if(!dogList.length){ exBtnMsg(go,'Sin perros','#b91c1c'); return; }
+  go.disabled=true; go.textContent='Cargando…'; go.style.background='';
+  loadXLSX(async ()=>{
+    try{
+      const {dates, byDate}=await gatherExportData(fromDk, toDk);
+      const wb=window.XLSX.utils.book_new();
+      if(wantBill) { const s=buildBillingSheet(byDate,dates,dogList,fromDk,toDk); window.XLSX.utils.book_append_sheet(wb,wsFromData(s),s.name); }
+      if(wantAtt)  { const s=buildAttSheet(byDate,dates,dogList,fromDk,toDk);     window.XLSX.utils.book_append_sheet(wb,wsFromData(s),s.name); }
+      if(wantRates){ const s=buildRatesSheet(dogList);                            window.XLSX.utils.book_append_sheet(wb,wsFromData(s),s.name); }
+      const base = (dogId && S.dogs[dogId])
+        ? 'CayeDJB_'+fileSafe(S.dogs[dogId].name)+'_'+fromDk+'_a_'+toDk
+        : 'CayeDJB_'+fromDk+'_a_'+toDk;
+      window.XLSX.writeFile(wb, base+'.xlsx', {bookType:'xlsx', type:'binary', cellStyles:true});
+      go.disabled=false; go.textContent='Descargado ✓'; go.style.background='#15803d';
+      setTimeout(()=>{ const r=document.getElementById('modalRoot'); if(r) r.innerHTML=''; }, 1200);
+    }catch(e){
+      go.disabled=false; exBtnMsg(go,'Error al exportar','#b91c1c');
+      console.error('export',e);
+    }
+  }, ()=>{ go.disabled=false; exBtnMsg(go,'Sin conexión para SheetJS','#b91c1c'); });
+}
+document.getElementById('invExport').addEventListener('click', openExportModal);
+
+/* ── Modal de confirmación destructiva (§6) ──
+   Reemplaza confirm() nativo. Devuelve Promise<boolean>. */
+function confirmModal({title='¿Seguro?', body='Esto no se puede deshacer fácilmente.', ok='Eliminar', cancel='Cancelar', danger=true}={}){
+  return new Promise(resolve=>{
+    const root=document.getElementById('modalRoot');
+    root.innerHTML=`<div class="modal-back"><div class="modal-card" role="dialog" aria-modal="true">
+      <h3>${escapeHtml(title)}</h3>
+      <p>${escapeHtml(body)}</p>
+      <div class="modal-actions">
+        <button class="btn sec" data-m="cancel">${escapeHtml(cancel)}</button>
+        <button class="btn ${danger?'danger':''}" data-m="ok">${escapeHtml(ok)}</button>
+      </div>
+    </div></div>`;
+    const close=(val)=>{ root.innerHTML=''; resolve(val); };
+    root.querySelector('[data-m="ok"]').addEventListener('click', ()=>close(true));
+    root.querySelector('[data-m="cancel"]').addEventListener('click', ()=>close(false));
+    root.querySelector('.modal-back').addEventListener('click', e=>{ if(e.target.classList.contains('modal-back')) close(false); });
+  });
+}
+
+/* Modal informativo de un solo botón (detalle del error de sync). */
+function infoModal(title, body){
+  const root=document.getElementById('modalRoot');
+  root.innerHTML=`<div class="modal-back"><div class="modal-card" role="dialog" aria-modal="true">
+    <h3>${escapeHtml(title)}</h3>
+    <p style="white-space:pre-wrap;">${escapeHtml(body)}</p>
+    <div class="modal-actions"><button class="btn" data-m="ok">Cerrar</button></div>
+  </div></div>`;
+  const close=()=>{ root.innerHTML=''; };
+  root.querySelector('[data-m="ok"]').addEventListener('click', close);
+  root.querySelector('.modal-back').addEventListener('click', e=>{ if(e.target.classList.contains('modal-back')) close(); });
+}
+
+/* ── PERROS ── */
+// Badge de turno en la lista: T1/T2/T3, o "⚠ sin turno" si falta (no debería tras migración).
+function turnBadge(d){
+  return hasTurn(d)
+    ? `<span class="badge tb">${d.turn}</span>`
+    : `<span class="badge tb warn">⚠ sin turno</span>`;
+}
+function perroCard(d, inactive){
+  if(S.editing===d.id){
+    const et=effTurn(d);   // default T1 si el perro no tuviese turno
+    return `<div class="perro">
+      <div class="top"><span class="pn">${escapeHtml(d.name)}</span></div>
+      <div class="editbox">
+        <div class="field"><label>£ paseo</label><input type="number" class="txtin" id="ed-w-${d.id}" value="${d.walkRate}" step="0.01" min="0"></div>
+        <div class="field"><label>£ noche</label><input type="number" class="txtin" id="ed-b-${d.id}" value="${d.boardingRate}" step="0.01" min="0"></div>
+        <div class="field"><label>Turno</label>
+          <select id="ed-t-${d.id}">
+            <option value="T1" ${et==='T1'?'selected':''}>T1 — 8:15-9:30</option>
+            <option value="T2" ${et==='T2'?'selected':''}>T2 — 11:20-12:30</option>
+            <option value="T3" ${et==='T3'?'selected':''}>T3 — 13:30-14:30</option>
+          </select>
+        </div>
+      </div>
+      <div class="editbox" style="margin-top:8px;">
+        <button class="mini" data-act="save" data-id="${d.id}">Guardar</button>
+        <button class="mini" data-act="cancel" data-id="${d.id}">Cancelar</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="perro ${inactive?'inactive':''}">
+    <div class="top">
+      <span class="pn">${escapeHtml(d.name)}</span>
+      ${turnBadge(d)}
+      ${inactive?'<span class="badge">inactivo</span>':''}
+      ${inactive
+        ? `<button class="mini" data-act="reactivate" data-id="${d.id}">Reactivar</button>`
+        : `<button class="mini" data-act="edit" data-id="${d.id}">Editar</button>
+           <button class="mini danger" data-act="delete" data-id="${d.id}">Eliminar</button>`}
+    </div>
+    <div class="rates">Paseo ${money(d.walkRate)} · Noche ${money(d.boardingRate)}</div>
+  </div>`;
+}
+
+function renderPerros(){
+  const box=document.getElementById('perrosList');
+  const histBox=document.getElementById('historicoList');
+  const histSum=document.getElementById('historicoSummary');
+  const all=allDogsSorted();
+  const active=all.filter(d=>d.active!==false);
+  const inactive=all.filter(d=>d.active===false);
+
+  box.innerHTML = active.length
+    ? active.map(d=>perroCard(d,false)).join('')
+    : '<div class="empty">Sin perros activos. Añade uno arriba.</div>';
+
+  histSum.textContent = `Histórico (${inactive.length} inactivo${inactive.length===1?'':'s'})`;
+  histBox.innerHTML = inactive.length
+    ? inactive.map(d=>perroCard(d,true)).join('')
+    : '<div class="hint">No hay perros eliminados.</div>';
+}
+
+// Delegación de clicks para perros activos (perrosList) e histórico (historicoList).
+async function onPerroClick(ev){
+  const b=ev.target.closest('[data-act]'); if(!b) return;
+  const id=b.dataset.id, act=b.dataset.act;
+  const d=S.dogs[id];
+  if(act==='edit'){ S.editing=id; renderPerros(); }
+  else if(act==='cancel'){ S.editing=null; renderPerros(); }
+  else if(act==='save'){
+    const w=parseFloat(document.getElementById('ed-w-'+id).value);
+    const bo=parseFloat(document.getElementById('ed-b-'+id).value);
+    const turn=document.getElementById('ed-t-'+id).value;
+    if(isNaN(w)||isNaN(bo)||w<0||bo<0){ alert('Tarifas inválidas.'); return; }
+    if(!TURNS[turn]){ alert('Selecciona un turno.'); return; }
+    try{ await setDoc(doc(db,'dogs',id), {walkRate:w, boardingRate:bo, turn}, {merge:true}); }
+    catch(e){ setError('No se pudo guardar: '+e.message); return; }
+    bumpMeta(); S.editing=null; renderPerros();
+  }
+  else if(act==='delete'){
+    // Soft-delete (§5): no borra el doc, pone active:false. Modal custom (§6).
+    if(!d) return;
+    const okGo = await confirmModal({
+      title:`Eliminar a ${d.name}`,
+      body:'Esto no se puede deshacer fácilmente. El perro saldrá de HOY pero quedará en el Histórico para reactivarlo.',
+      ok:'Eliminar'
+    });
+    if(!okGo) return;
+    setSync('saving');
+    try{ await setDoc(doc(db,'dogs',id), {active:false}, {merge:true}); }
+    catch(e){ setError('No se pudo eliminar: '+e.message); return; }
+    bumpMeta();
+  }
+  else if(act==='reactivate'){
+    if(!d) return;
+    setSync('saving');
+    try{ await setDoc(doc(db,'dogs',id), {active:true}, {merge:true}); }
+    catch(e){ setError('No se pudo reactivar: '+e.message); return; }
+    bumpMeta();
+  }
+}
+document.getElementById('perrosList').addEventListener('click', onPerroClick);
+document.getElementById('historicoList').addEventListener('click', onPerroClick);
+
+/* ── Descargar backup JSON (§3) ── */
+document.getElementById('btnBackup').addEventListener('click', downloadBackup);
+async function downloadBackup(){
+  const hint=document.getElementById('backupHint');
+  const btn=document.getElementById('btnBackup');
+  btn.disabled=true; hint.textContent='Recopilando datos…';
+  try{
+    const backup={ exportedAt:new Date().toISOString(), schemaVersion:5, dogs:{}, walks:{}, meta:{} };
+    // dogs (colección completa) — permitido por las rules.
+    const dogsSnap=await getDocs(collection(db,'dogs'));
+    dogsSnap.forEach(s=>{ backup.dogs[s.id]=tsClean(s.data()); });
+    // meta/main
+    const m=await getDoc(doc(db,'meta','main'));
+    if(m.exists()) backup.meta.main=tsClean(m.data());
+    // walks: escaneo por fecha (las rules permiten leer /walks/{fecha}/dogs pero no
+    // listar /walks ni un collectionGroup, así que recorremos un rango acotado).
+    const start=parseYMD('2026-01-01'), end=new Date(); end.setDate(end.getDate()+7);
+    const dates=[]; for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1))
+      dates.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);
+    const CH=20;
+    for(let i=0;i<dates.length;i+=CH){
+      hint.textContent=`Leyendo paseos… ${Math.min(i+CH,dates.length)}/${dates.length}`;
+      await Promise.all(dates.slice(i,i+CH).map(async dt=>{
+        const ds=await getDocs(collection(db,'walks',dt,'dogs'));
+        if(ds.empty) return; const day={};
+        ds.forEach(s=>{ day[s.id]=tsClean(s.data()); });
+        backup.walks[dt]=day;
+      }));
+    }
+    backup.counts={
+      dogs:Object.keys(backup.dogs).length,
+      walkDays:Object.keys(backup.walks).length,
+      walkDocs:Object.values(backup.walks).reduce((n,day)=>n+Object.keys(day).length,0),
+    };
+    const fname=`cayedjb_${todayStr()}.json`;
+    const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click();
+    a.remove(); URL.revokeObjectURL(url);
+    hint.textContent=`✓ ${fname} — ${backup.counts.dogs} perros, ${backup.counts.walkDays} días (${backup.counts.walkDocs} marcas).`;
+  }catch(e){
+    hint.textContent='No se pudo generar el backup: '+e.message;
+    setError('Backup local: '+e.message);
+  }finally{ btn.disabled=false; }
+}
+// Timestamps de Firestore → ISO para que el JSON sea legible/portable.
+function tsClean(obj){
+  const out={};
+  for(const [k,v] of Object.entries(obj)) out[k]=(v && typeof v.toDate==='function') ? v.toDate().toISOString() : v;
+  return out;
+}
+
+document.getElementById('addDog').addEventListener('click', async ()=>{
+  const name=document.getElementById('newName').value.trim();
+  const w=parseFloat(document.getElementById('newWalk').value);
+  const bo=parseFloat(document.getElementById('newBoard').value);
+  const turn=document.getElementById('newTurn').value;
+  if(!name){ alert('Pon un nombre.'); return; }
+  if(isNaN(w)||isNaN(bo)||w<0||bo<0){ alert('Tarifas inválidas.'); return; }
+  if(!TURNS[turn]){ alert('Selecciona un turno.'); return; }
+  const id=slugify(name);
+  if(!id){ alert('Nombre no válido.'); return; }
+  if(S.dogs[id]){ alert(`Ya existe un perro con id "${id}".`); return; }
+  setSync('saving');
+  try{ await setDoc(doc(db,'dogs',id), {name, walkRate:w, boardingRate:bo, active:true, turn}); }
+  catch(e){ setError('No se pudo añadir el perro: '+e.message); return; }
+  bumpMeta();
+  document.getElementById('newName').value='';
+  document.getElementById('newWalk').value='30';
+  document.getElementById('newBoard').value='60';
+  document.getElementById('newTurn').value='T1';
+});
+
+async function bumpMeta(){
+  try{ await setDoc(doc(db,'meta','main'), {lastWrite:serverTimestamp(), schemaVersion:5}, {merge:true}); }catch(e){}
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>(
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ── PWA: registrar service worker (cache-first del propio dominio, ver sw.js) ── */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});  // catch silencioso
+  });
+}
+</script>
+</body>
+</html>
