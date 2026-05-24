@@ -81,6 +81,51 @@ jobs:
             echo "✅ Backup ${DATE}.json commiteado a la rama backups."
           fi
 
+      - name: Log del backup en main (keep-alive anti-60d)
+        # Actualiza BACKUP_LOG.md en main y lo pushea. El push a una rama activa
+        # cuenta como actividad del repo y evita que GitHub deshabilite el
+        # workflow programado por inactividad >60 días (los commits del bot a la
+        # rama "backups" por sí solos no siempre resetean ese contador).
+        working-directory: code
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%F)
+          SIZE=$(stat -c%s "$GITHUB_WORKSPACE/backup.json" 2>/dev/null || echo 0)
+          SIZE_KB=$(( (SIZE + 1023) / 1024 ))
+          # SHA del commit del backup en la rama "backups" (creado en el step anterior).
+          BK_SHA=$(git -C "$GITHUB_WORKSPACE/bk" rev-parse --short HEAD 2>/dev/null || echo "n/a")
+          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+
+          # Partir de la punta actual de main evita un push non-fast-forward.
+          git fetch --depth 1 "$REMOTE" main
+          git checkout -B main FETCH_HEAD
+
+          {
+            echo "# Registro de backups de Firestore"
+            echo
+            echo "Generado automáticamente por \`.github/workflows/firestore_backup.yml\`."
+            echo "El push a \`main\` cuenta como actividad del repo y mantiene vivo el"
+            echo "workflow programado (GitHub lo deshabilita tras >60 días sin actividad)."
+            echo
+            echo "| Último backup (UTC) | Tamaño JSON | Commit en rama \`backups\` |"
+            echo "|---|---|---|"
+            echo "| ${DATE} | ${SIZE_KB} KB (${SIZE} bytes) | \`${BK_SHA}\` |"
+          } > BACKUP_LOG.md
+
+          git config user.email "actions@github.com"
+          git config user.name  "github-actions[bot]"
+          git add BACKUP_LOG.md
+          if git diff --cached --quiet; then
+            echo "BACKUP_LOG.md sin cambios."
+          else
+            git commit -m "chore: log backup ${DATE}"
+            git push "$REMOTE" HEAD:main
+            echo "✅ BACKUP_LOG.md actualizado en main."
+          fi
+
       - name: Abrir issue si el backup falla
         if: failure()
         uses: actions/github-script@v8
