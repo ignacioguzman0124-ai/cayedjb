@@ -96,6 +96,9 @@
   .toggle:active{transform:scale(.92);}
   .toggle.walked.on{background:var(--green);border-color:var(--green);color:#fff;}
   .toggle.boarding.on{background:var(--boarding-bg);border-color:var(--boarding-fg);color:var(--boarding-fg);}
+  .toggle.disabled{opacity:.45;cursor:not-allowed;}            /* §8: fecha futura → no marcable */
+  .future-note{background:#fffbeb;border:1px solid #fbbf24;color:#b45309;border-radius:10px;
+    padding:10px 12px;margin:8px 0;font-size:14px;font-weight:600;text-align:center;}  /* §8 */
   .empty{color:var(--muted);text-align:center;padding:40px 10px;}
 
   /* ── FACTURA ── */
@@ -533,13 +536,31 @@ function listenWalks(date){
 // estado efectivo del perro hoy: "walked" | "boarding" | null (vacío)
 function eff(id){ return (id in S.pending) ? S.pending[id] : (S.snap[id] || null); }
 
+/* ── §8: bloqueo de fechas futuras lejanas ───────────────────────────
+   Marcar paseos a más de 7 días vista casi siempre es un error (p.ej. el
+   date-picker saltando a 2030) que ensuciaría la facturación histórica.
+   maxAllowedDate = hoy (Europe/London) + 7 días. Comparación lexicográfica
+   válida porque las claves son YYYY-MM-DD con cero a la izquierda. */
+function maxAllowedDate(){
+  const {y,m,d}=nowLondon();
+  const dt=new Date(Date.UTC(y,m-1,d)); dt.setUTCDate(dt.getUTCDate()+7);
+  return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth()+1)}-${pad(dt.getUTCDate())}`;
+}
+function isFutureBlocked(dateStr){ return !!dateStr && dateStr > maxAllowedDate(); }
+function futureBlockedModal(){ infoModal('Fecha futura', 'No puedes marcar paseos futuros más allá de una semana.'); }
+
 /* ── Render: HOY ── */
 function renderHoy(){
   document.getElementById('dateTitle').textContent = fmtHeader(S.date);
   const dogs = activeDogsByTurn();
   const box = document.getElementById('hoyList');
   if(!dogs.length){ box.innerHTML='<div class="empty">No hay perros activos. Añade uno en la pestaña Perros.</div>'; return; }
-  box.innerHTML = dogs.map(d=>{
+  const blocked = isFutureBlocked(S.date);   // §8: fecha a >7 días vista → no se puede marcar
+  const note = blocked
+    ? '<div class="future-note">🔒 No puedes marcar paseos futuros más allá de una semana.</div>'
+    : '';
+  const dis = blocked ? ' disabled' : '';
+  box.innerHTML = note + dogs.map(d=>{
     const st=eff(d.id);   // "walked" | "boarding" | null
     const turnLine = hasTurn(d) ? `${d.turn} · ${TURNS[d.turn]}` : '⚠ sin turno';
     return `<div class="dog-row">
@@ -547,25 +568,38 @@ function renderHoy(){
         <div class="dog-name">${escapeHtml(d.name)}</div>
         <div class="dog-turn">${turnLine}</div>
       </div>
-      <button class="toggle walked ${st==='walked'?'on':''}"     data-id="${d.id}" data-s="walked"   aria-label="Paseado">✅</button>
-      <button class="toggle boarding ${st==='boarding'?'on':''}" data-id="${d.id}" data-s="boarding" aria-label="Boarding">🏠</button>
+      <button class="toggle walked ${st==='walked'?'on':''}${dis}"     data-id="${d.id}" data-s="walked"   aria-label="Paseado">✅</button>
+      <button class="toggle boarding ${st==='boarding'?'on':''}${dis}" data-id="${d.id}" data-s="boarding" aria-label="Boarding">🏠</button>
     </div>`;
   }).join('');
 }
 
-/* ── Toggle + escritura debounced (300ms) ── */
-const flushTimers={};
+/* ── Toggle + escritura INMEDIATA (§1) ──
+   Antes había un debounce de 300ms: si el usuario cerraba Safari dentro de esa
+   ventana el write ni siquiera se había encolado en el caché offline de Firestore
+   y se perdía sin aviso. Ahora cada tap escribe ya: setDoc encola en el caché
+   persistente al instante (la llamada es síncrona hasta el primer await, y no hay
+   ninguno antes del setDoc). flushPending() es solo red de seguridad. */
 document.getElementById('hoyList').addEventListener('click', ev=>{
   const btn=ev.target.closest('.toggle'); if(!btn) return;
+  if(isFutureBlocked(S.date)){ futureBlockedModal(); return; }   // §8: no marcar futuro lejano
   const id=btn.dataset.id, s=btn.dataset.s;   // "walked" | "boarding"
   const cur=eff(id);
   // mutuamente excluyente: pulsar el estado activo lo limpia; si no, lo fija (pisa al otro)
   S.pending[id] = (cur===s) ? null : s;       // optimista (null = vacío)
   renderHoy();
   sync._pw=true; clearError(); renderSync();   // walks pending → 🔵 (lo resuelve el listener)
-  clearTimeout(flushTimers[id]);
-  flushTimers[id]=setTimeout(()=>flushWalk(id), 300);
+  flushWalk(id);                               // escritura inmediata, sin debounce
 });
+
+/* Red de seguridad (§1): flushea cualquier marca pendiente antes de que la página
+   se descargue o pase a segundo plano. En iOS Safari 'beforeunload' es poco fiable,
+   así que también escuchamos 'pagehide' y 'visibilitychange'→hidden. flushWalk es
+   idempotente: re-escribir el mismo estado no hace daño. */
+function flushPending(){ for(const id of Object.keys(S.pending)) flushWalk(id); }
+window.addEventListener('beforeunload', flushPending);
+window.addEventListener('pagehide', flushPending);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushPending(); });
 
 async function flushWalk(id){
   if(!(id in S.pending)) return;
@@ -633,6 +667,7 @@ async function calcInvoice(){
   const to=document.getElementById('invTo').value;
   const out=document.getElementById('invResult');
   if(!id || !from || !to){ out.innerHTML='<div class="hint">Selecciona perro y fechas.</div>'; return; }
+  if(isFutureBlocked(from)){ infoModal('Fecha futura', 'La fecha "Desde" está a más de una semana en el futuro. Revisa el rango para no facturar días inexistentes.'); return; }   // §8
   if(parseYMD(from) > parseYMD(to)){ out.innerHTML='<div class="hint">La fecha "Desde" es posterior a "Hasta".</div>'; return; }
   const dog=S.dogs[id];
   out.innerHTML='<div class="hint">Calculando…</div>';
@@ -1089,8 +1124,8 @@ async function onPerroClick(ev){
     const w=parseFloat(document.getElementById('ed-w-'+id).value);
     const bo=parseFloat(document.getElementById('ed-b-'+id).value);
     const turn=document.getElementById('ed-t-'+id).value;
-    if(isNaN(w)||isNaN(bo)||w<0||bo<0){ alert('Tarifas inválidas.'); return; }
-    if(!TURNS[turn]){ alert('Selecciona un turno.'); return; }
+    if(isNaN(w)||isNaN(bo)||w<0||bo<0){ infoModal('Tarifas inválidas', 'El £ paseo y el £ noche deben ser números mayores o iguales que 0.'); return; }
+    if(!TURNS[turn]){ infoModal('Turno requerido', 'Selecciona un turno: T1, T2 o T3.'); return; }
     try{ await setDoc(doc(db,'dogs',id), {walkRate:w, boardingRate:bo, turn}, {merge:true}); }
     catch(e){ setError('No se pudo guardar: '+e.message); return; }
     bumpMeta(); S.editing=null; renderPerros();
@@ -1177,12 +1212,12 @@ document.getElementById('addDog').addEventListener('click', async ()=>{
   const w=parseFloat(document.getElementById('newWalk').value);
   const bo=parseFloat(document.getElementById('newBoard').value);
   const turn=document.getElementById('newTurn').value;
-  if(!name){ alert('Pon un nombre.'); return; }
-  if(isNaN(w)||isNaN(bo)||w<0||bo<0){ alert('Tarifas inválidas.'); return; }
-  if(!TURNS[turn]){ alert('Selecciona un turno.'); return; }
+  if(!name){ infoModal('Falta el nombre', 'Escribe un nombre para el perro.'); return; }
+  if(isNaN(w)||isNaN(bo)||w<0||bo<0){ infoModal('Tarifas inválidas', 'El £ paseo y el £ noche deben ser números mayores o iguales que 0.'); return; }
+  if(!TURNS[turn]){ infoModal('Turno requerido', 'Selecciona un turno: T1, T2 o T3.'); return; }
   const id=slugify(name);
-  if(!id){ alert('Nombre no válido.'); return; }
-  if(S.dogs[id]){ alert(`Ya existe un perro con id "${id}".`); return; }
+  if(!id){ infoModal('Nombre no válido', 'Ese nombre no genera un identificador válido. Prueba con otro.'); return; }
+  if(S.dogs[id]){ infoModal('Perro duplicado', `Ya existe un perro con el identificador "${id}".`); return; }
   setSync('saving');
   try{ await setDoc(doc(db,'dogs',id), {name, walkRate:w, boardingRate:bo, active:true, turn}); }
   catch(e){ setError('No se pudo añadir el perro: '+e.message); return; }
