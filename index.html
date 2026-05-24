@@ -325,6 +325,10 @@ function slugify(s){
     .replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
 }
 function money(n){
+  // BLINDAJE (FIX 7): tarifa corrupta/ausente/no numérica (NaN, null, undefined, Infinity, string)
+  // → "—" en vez de "£NaN". No coercemos: un valor no numérico se considera roto y se marca como tal,
+  // así una factura con un perro mal configurado se ve "—" (legible) en vez de "£NaN". Solo display.
+  if(!Number.isFinite(n)) return '—';
   const r = Math.round(n*100)/100;
   const s = (r % 1 === 0)
     ? r.toLocaleString('en-GB')
@@ -435,6 +439,13 @@ function startApp(){
   });
 }
 
+// localStorage/sessionStorage pueden lanzar (Safari iOS privado, cuota llena). Blindamos toda la
+// I/O del PIN: si falla, seguimos como si no hubiera valor (lectura) o sin persistir (escritura),
+// para que una excepción nunca congele la pantalla del PIN y deje al usuario fuera de la app.
+function storeGet(store,k){ try{ return store.getItem(k); }catch(e){ return null; } }
+function storeSet(store,k,v){ try{ store.setItem(k,v); }catch(e){ /* no se pudo persistir */ } }
+function storeDel(store,k){ try{ store.removeItem(k); }catch(e){ /* no se pudo borrar */ } }
+
 function initPinGate(){
   const gate = document.getElementById('pinGate');
   const input = document.getElementById('pinInput');
@@ -442,11 +453,11 @@ function initPinGate(){
   const msg = document.getElementById('pinMsg');
 
   // Ya validado en este dispositivo (localStorage) → entra directo.
-  if(localStorage.getItem(PIN_OK_KEY)==='1'){ gate.remove(); startApp(); return; }
+  if(storeGet(localStorage,PIN_OK_KEY)==='1'){ gate.remove(); startApp(); return; }
 
   let lockTimer=null;
   function lockedRemaining(){
-    const until = parseInt(sessionStorage.getItem(PIN_LOCK_KEY)||'0',10);
+    const until = parseInt(storeGet(sessionStorage,PIN_LOCK_KEY)||'0',10);
     return Math.max(0, until - Date.now());
   }
   function tickLock(){
@@ -456,7 +467,7 @@ function initPinGate(){
     msg.textContent = `Demasiados intentos. Espera ${Math.ceil(rem/1000)}s.`;
   }
   function startLock(){
-    sessionStorage.setItem(PIN_LOCK_KEY, String(Date.now()+LOCK_MS));
+    storeSet(sessionStorage,PIN_LOCK_KEY, String(Date.now()+LOCK_MS));
     if(!lockTimer) lockTimer=setInterval(tickLock, 250);
     tickLock();
   }
@@ -470,17 +481,17 @@ function initPinGate(){
     const ok = (await sha256hex(val)) === PIN_HASH;
     btn.disabled=false;
     if(ok){
-      localStorage.setItem(PIN_OK_KEY,'1');   // persiste por dispositivo (no por sesión)
-      sessionStorage.removeItem(PIN_FAILS_KEY);
-      sessionStorage.removeItem(PIN_LOCK_KEY);
+      storeSet(localStorage,PIN_OK_KEY,'1');  // persiste por dispositivo (no por sesión)
+      storeDel(sessionStorage,PIN_FAILS_KEY);
+      storeDel(sessionStorage,PIN_LOCK_KEY);
       gate.remove();
       startApp();
       return;
     }
-    const fails = (parseInt(sessionStorage.getItem(PIN_FAILS_KEY)||'0',10) + 1);
-    sessionStorage.setItem(PIN_FAILS_KEY, String(fails));
+    const fails = (parseInt(storeGet(sessionStorage,PIN_FAILS_KEY)||'0',10) + 1);
+    storeSet(sessionStorage,PIN_FAILS_KEY, String(fails));
     input.value='';
-    if(fails>=3){ sessionStorage.setItem(PIN_FAILS_KEY,'0'); startLock(); }
+    if(fails>=3){ storeSet(sessionStorage,PIN_FAILS_KEY,'0'); startLock(); }
     else { msg.textContent = `PIN incorrecto. Te quedan ${3-fails} intento(s).`; input.focus(); }
   }
   btn.addEventListener('click', tryPin);
@@ -518,12 +529,12 @@ function listenWalks(date){
       if(date!==S.date) return; // ignora snapshots de una fecha ya cambiada
       S.snap = {};
       snap.forEach(d=>{ const v=d.data(); if(v.status) S.snap[d.id]=v.status; });
-      // limpia overrides ya confirmados por el servidor
-      for(const id of Object.keys(S.pending)){
-        const sv = S.snap[id] || null;
-        if(!snap.metadata.hasPendingWrites && S.pending[id]===sv)
-          delete S.pending[id];
-      }
+      // Los overrides optimistas solo valen mientras haya escrituras locales sin confirmar.
+      // En cuanto el snapshot llega confirmado por el servidor (sin pendingWrites), su valor es
+      // la verdad —aunque otro dispositivo lo haya pisado—, así que soltamos TODOS los overrides
+      // sin compararlos con sv. Si comparáramos, un valor pisado por otro dispositivo se quedaría
+      // pegado para siempre (divergencia entre móviles).
+      if(!snap.metadata.hasPendingWrites) S.pending = {};
       sync._pw = snap.metadata.hasPendingWrites;
       if(!snap.metadata.fromCache && sync.online) clearError();
       renderSync();
@@ -676,25 +687,33 @@ async function calcInvoice(){
     dates.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);
 
   const results = await Promise.all(dates.map(async dt=>{
+    // error de lectura (red/permisos) ≠ día sin marca: getDoc solo rechaza ante error real;
+    // un día sin doc resuelve con snap.exists()===false y cuenta como "sin paseo".
     try{ const snap=await getDoc(doc(db,'walks',dt,'dogs',id));
       return {dt, v: snap.exists()?snap.data():null}; }
-    catch(e){ return {dt, v:null}; }
+    catch(e){ return {dt, error:true}; }
   }));
 
   const walkDates=[], boardDates=[];
-  results.forEach(r=>{ if(!r.v) return;
+  let failed=0;
+  results.forEach(r=>{ if(r.error){ failed++; return; } if(!r.v) return;
     if(r.v.status==='walked')   walkDates.push(r.dt);
     if(r.v.status==='boarding') boardDates.push(r.dt);
   });
 
   const wTotal=walkDates.length*dog.walkRate;
   const bTotal=boardDates.length*dog.boardingRate;
+  // Si algún día no se pudo leer, el total puede estar incompleto: avísalo y no lo des por definitivo.
+  const warn = failed>0
+    ? `<div class="future-note">⚠️ ${failed} día${failed===1?'':'s'} no se pudieron leer (red o permisos). El total puede estar incompleto: reintenta antes de facturar.</div>`
+    : '';
+  const totalLabel = failed>0 ? 'TOTAL (incompleto)' : 'TOTAL';
 
-  out.innerHTML=`<div class="invoice">
+  out.innerHTML=warn+`<div class="invoice">
     <h3>${escapeHtml(dog.name)} · ${from} → ${to}</h3>
     <div class="line"><span>Paseos</span><span class="calc">${walkDates.length} × ${money(dog.walkRate)} = ${money(wTotal)}</span></div>
     <div class="line"><span>Boarding</span><span class="calc">${boardDates.length} × ${money(dog.boardingRate)} = ${money(bTotal)}</span></div>
-    <div class="total"><span>TOTAL</span><span>${money(wTotal+bTotal)}</span></div>
+    <div class="total"><span>${totalLabel}</span><span>${money(wTotal+bTotal)}</span></div>
     <div id="invCal" class="cal"></div>
   </div>
   <div class="hint">Calendario de ${escapeHtml(dog.name)}: ✅ paseo · 🏠 boarding. Estado único por día (boarding gana).</div>`;
@@ -719,18 +738,20 @@ const calCache = {};                                           // `${id}|${y}-${
 // Lee el estado del perro para cada día del mes (un getDoc por día), con caché por sesión.
 async function calFetchMonth(id, year, month){
   const key = `${id}|${year}-${month}`;
-  if(calCache[key]) return calCache[key];
+  if(calCache[key]) return { map: calCache[key], failed: 0 };
   const days = new Date(year, month+1, 0).getDate();
   const dates = [];
   for(let d=1; d<=days; d++) dates.push(`${year}-${pad(month+1)}-${pad(d)}`);
   const map = {};
+  let failed = 0;
   await Promise.all(dates.map(async dt=>{
+    // getDoc solo rechaza ante error real de lectura; un día sin doc resuelve y se deja vacío.
     try{ const snap=await getDoc(doc(db,'walks',dt,'dogs',id));
       if(snap.exists() && snap.data().status) map[dt]=snap.data().status; }
-    catch(e){ /* día sin doc o sin permiso: se deja vacío */ }
+    catch(e){ failed++; }   // error de red/permisos ≠ día sin marca
   }));
-  calCache[key] = map;
-  return map;
+  if(failed===0) calCache[key] = map;   // solo cachea meses leídos completos (un retry reintenta los fallidos)
+  return { map, failed };
 }
 
 function calShift(delta){
@@ -764,11 +785,18 @@ async function renderCalendar(){
   box.querySelector('#calPrev').addEventListener('click', ()=>calShift(-1));
   box.querySelector('#calNext').addEventListener('click', ()=>calShift(1));
 
-  const map = await calFetchMonth(id, year, month);
+  const { map, failed } = await calFetchMonth(id, year, month);
   // Si el usuario navegó (o cambió de perro) mientras cargaba, este render quedó obsoleto.
   if(calState.id!==id || calState.year!==year || calState.month!==month) return;
   const cells = document.getElementById('calCells');
   if(!cells) return;
+  // Días que no se pudieron leer: avisa de que el calendario puede estar incompleto.
+  if(failed>0){
+    const w=document.createElement('div');
+    w.className='future-note'; w.style.marginTop='8px';
+    w.textContent=`⚠️ ${failed} día${failed===1?'':'s'} no se pudieron leer. El calendario puede estar incompleto; reintenta.`;
+    box.insertBefore(w, box.querySelector('.cal-dow'));
+  }
 
   const firstDow = (new Date(year, month, 1).getDay()+6)%7;  // 0=Lunes
   const total = new Date(year, month+1, 0).getDate();
@@ -995,16 +1023,21 @@ async function doExport(){
   if(!wantBill && !wantAtt && !wantRates){ exBtnMsg(go,'Elige una hoja','#b91c1c'); return; }
   const dogList = dogId
     ? (S.dogs[dogId] ? [{id:dogId, ...S.dogs[dogId]}] : [])
-    : activeDogsSorted();
+    : allDogsSorted();   // universo completo; los inactivos sin marcas se podan abajo, cuando ya tenemos byDate
   if(!dogList.length){ exBtnMsg(go,'Sin perros','#b91c1c'); return; }
   go.disabled=true; go.textContent='Cargando…'; go.style.background='';
   loadXLSX(async ()=>{
     try{
       const {dates, byDate}=await gatherExportData(fromDk, toDk);
+      // "Todos los perros": activos siempre (aunque tengan 0 marcas); inactivos solo si tienen
+      // ≥1 marca en el rango. Reutiliza byDate ya cargado (sin 2ª lectura). Orden alfabético intacto.
+      const expDogs = dogId
+        ? dogList
+        : dogList.filter(d => d.active!==false || dates.some(dt => byDate[dt] && byDate[dt][d.id]));
       const wb=window.XLSX.utils.book_new();
-      if(wantBill) { const s=buildBillingSheet(byDate,dates,dogList,fromDk,toDk); window.XLSX.utils.book_append_sheet(wb,wsFromData(s),s.name); }
-      if(wantAtt)  { const s=buildAttSheet(byDate,dates,dogList,fromDk,toDk);     window.XLSX.utils.book_append_sheet(wb,wsFromData(s),s.name); }
-      if(wantRates){ const s=buildRatesSheet(dogList);                            window.XLSX.utils.book_append_sheet(wb,wsFromData(s),s.name); }
+      if(wantBill) { const s=buildBillingSheet(byDate,dates,expDogs,fromDk,toDk); window.XLSX.utils.book_append_sheet(wb,wsFromData(s),s.name); }
+      if(wantAtt)  { const s=buildAttSheet(byDate,dates,expDogs,fromDk,toDk);     window.XLSX.utils.book_append_sheet(wb,wsFromData(s),s.name); }
+      if(wantRates){ const s=buildRatesSheet(expDogs);                            window.XLSX.utils.book_append_sheet(wb,wsFromData(s),s.name); }
       const base = (dogId && S.dogs[dogId])
         ? 'CayeDJB_'+fileSafe(S.dogs[dogId].name)+'_'+fromDk+'_a_'+toDk
         : 'CayeDJB_'+fromDk+'_a_'+toDk;
@@ -1095,7 +1128,33 @@ function perroCard(d, inactive){
   </div>`;
 }
 
+// FIX 6 · No perder la edición en curso cuando un snapshot remoto re-renderiza la lista de perros.
+// captureEditState() guarda lo tecleado (£ paseo/£ noche/turno) y el foco de la tarjeta en edición
+// ANTES de reconstruir el HTML; restoreEditState() lo reinyecta DESPUÉS. Solo una tarjeta puede
+// estar en edición a la vez (S.editing). Las demás se repintan con los datos frescos del snapshot.
+function captureEditState(){
+  const id=S.editing; if(id==null) return null;
+  const w=document.getElementById('ed-w-'+id); if(!w) return null;   // aún no hay edición pintada
+  const b=document.getElementById('ed-b-'+id), t=document.getElementById('ed-t-'+id);
+  const af=document.activeElement;
+  const focus = af && af.id && af.id.endsWith('-'+id) ? af.id : null;
+  let ss=null, se=null;
+  if(focus){ try{ ss=af.selectionStart; se=af.selectionEnd; }catch(_){} }  // input number lanza al leer selección
+  return { id, w:w.value, b:b?b.value:undefined, t:t?t.value:undefined, focus, ss, se };
+}
+function restoreEditState(s){
+  if(!s) return;
+  const w=document.getElementById('ed-w-'+s.id); if(w) w.value=s.w;
+  const b=document.getElementById('ed-b-'+s.id); if(b && s.b!==undefined) b.value=s.b;
+  const t=document.getElementById('ed-t-'+s.id); if(t && s.t!==undefined) t.value=s.t;
+  if(s.focus){
+    const f=document.getElementById(s.focus);
+    if(f){ f.focus(); if(s.ss!=null){ try{ f.setSelectionRange(s.ss, s.se); }catch(_){} } }
+  }
+}
+
 function renderPerros(){
+  const editState=captureEditState();   // FIX 6: preserva la edición en curso ante snapshots remotos
   const box=document.getElementById('perrosList');
   const histBox=document.getElementById('historicoList');
   const histSum=document.getElementById('historicoSummary');
@@ -1111,6 +1170,8 @@ function renderPerros(){
   histBox.innerHTML = inactive.length
     ? inactive.map(d=>perroCard(d,true)).join('')
     : '<div class="hint">No hay perros eliminados.</div>';
+
+  restoreEditState(editState);   // FIX 6: reinyecta lo tecleado + foco tras el re-render
 }
 
 // Delegación de clicks para perros activos (perrosList) e histórico (historicoList).

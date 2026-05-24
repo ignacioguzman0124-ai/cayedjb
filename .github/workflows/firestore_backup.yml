@@ -122,6 +122,13 @@ jobs:
             echo "BACKUP_LOG.md sin cambios."
           else
             git commit -m "chore: log backup ${DATE}"
+            # Alguien (normalmente Ignacio) pudo commitear a main entre el fetch de arriba y este
+            # push: el push saldría non-fast-forward y el keep-alive no correría esa semana. Con
+            # --rebase reaplicamos el commit de BACKUP_LOG.md sobre la punta remota actual y el push
+            # pasa fast-forward. Si hubiera conflicto en BACKUP_LOG.md (rarísimo: solo si se edita a
+            # mano), el rebase falla y —con set -e, sin "|| true"— el step revienta ruidosamente, así
+            # salta el step "Abrir issue si el backup falla" y nos llega el email de GitHub Actions.
+            git pull --rebase "$REMOTE" main
             git push "$REMOTE" HEAD:main
             echo "✅ BACKUP_LOG.md actualizado en main."
           fi

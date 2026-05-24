@@ -11,7 +11,7 @@
  * Cache versionada: subir el sufijo de CACHE invalida todo; la vieja se borra en
  * 'activate'. Para publicar una versión nueva: 'cayedjb-v5-002' → '...-003', etc.
  */
-const CACHE = 'cayedjb-v5-002';   // ← CACHE_VERSION: súbela en cada deploy para invalidar
+const CACHE = 'cayedjb-v5-003';   // ← CACHE_VERSION: súbela en cada deploy para invalidar
 
 // Shell del propio origen: obligatorio. Si esto falla, falla el install.
 const PRECACHE = ['./', './index.html', './firebase-config.js', './manifest.json'];
