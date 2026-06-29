@@ -6,4 +6,4 @@ workflow programado (GitHub lo deshabilita tras >60 días sin actividad).
 
 | Último backup (UTC) | Tamaño JSON | Commit en rama `backups` |
 |---|---|---|
-| 2026-06-22 | 118 KB (120123 bytes) | `924e980` |
+| 2026-06-29 | 118 KB (120123 bytes) | `36db6af` |
