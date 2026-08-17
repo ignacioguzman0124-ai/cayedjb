@@ -1,7 +1,14 @@
 {
-  "exportedAt": "2026-05-25T14:18:44.799Z",
+  "exportedAt": "2026-08-17T03:39:00.399Z",
   "schemaVersion": 5,
   "dogs": {
+    "alfie": {
+      "name": "Alfie",
+      "walkRate": 30,
+      "boardingRate": 60,
+      "active": true,
+      "turn": "T1"
+    },
     "aspen": {
       "walkRate": 30,
       "name": "Aspen",
@@ -4108,18 +4115,558 @@
         "markedBy": "seed",
         "markedAt": "2026-05-22T10:37:05.052Z"
       }
+    },
+    "2026-06-01": {
+      "alfie": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:19:54.486Z"
+      },
+      "aspen": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:45.472Z"
+      },
+      "bing": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:53.392Z"
+      },
+      "cato": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:55.103Z"
+      },
+      "clover": {
+        "status": "boarding",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:19:14.485Z"
+      },
+      "flaco": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:57.114Z"
+      },
+      "gigi": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:37.405Z"
+      },
+      "jimmy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:48.489Z"
+      },
+      "lara": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:56.642Z"
+      },
+      "lulu": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:38.425Z"
+      },
+      "margot": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:49.802Z"
+      },
+      "moses": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:59.432Z"
+      },
+      "nellie": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:50.313Z"
+      },
+      "neo": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:51.832Z"
+      },
+      "pierre": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:40.282Z"
+      },
+      "pistacho": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:40.927Z"
+      },
+      "purdey": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:41.727Z"
+      },
+      "river": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:59.068Z"
+      },
+      "snoopy": {
+        "status": "boarding",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:19:18.934Z"
+      },
+      "teddy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:19:00.043Z"
+      },
+      "yopo": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-01T22:18:53.742Z"
+      }
+    },
+    "2026-06-02": {
+      "alfie": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:32.923Z"
+      },
+      "aspen": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:39.823Z"
+      },
+      "bing": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:54.624Z"
+      },
+      "bob": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:45.533Z"
+      },
+      "cato": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:55.344Z"
+      },
+      "clover": {
+        "status": "boarding",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:46.754Z"
+      },
+      "flaco": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:58.594Z"
+      },
+      "gigi": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:34.541Z"
+      },
+      "jimmy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:47.978Z"
+      },
+      "lara": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:13:01.113Z"
+      },
+      "lulu": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:35.160Z"
+      },
+      "margot": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:48.706Z"
+      },
+      "moses": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:13:00.642Z"
+      },
+      "nellie": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:49.994Z"
+      },
+      "neo": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:52.395Z"
+      },
+      "pierre": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:36.132Z"
+      },
+      "pistacho": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:37.748Z"
+      },
+      "purdey": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:37.516Z"
+      },
+      "river": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:13:01.944Z"
+      },
+      "snoopy": {
+        "status": "boarding",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:43.412Z"
+      },
+      "teddy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:13:02.386Z"
+      },
+      "yopo": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T06:12:52.981Z"
+      }
+    },
+    "2026-06-03": {
+      "alfie": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:06.752Z"
+      },
+      "aspen": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:14.193Z"
+      },
+      "bing": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:28.253Z"
+      },
+      "bob": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:18.754Z"
+      },
+      "cato": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:30.051Z"
+      },
+      "clover": {
+        "status": "boarding",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:20.253Z"
+      },
+      "coco": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:31.383Z"
+      },
+      "gigi": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:07.693Z"
+      },
+      "jimmy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:20.903Z"
+      },
+      "lara": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:48.960Z"
+      },
+      "lulu": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:08.183Z"
+      },
+      "margot": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:22.583Z"
+      },
+      "moses": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:49.419Z"
+      },
+      "nellie": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:23.141Z"
+      },
+      "neo": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:25.962Z"
+      },
+      "pierre": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:09.140Z"
+      },
+      "pistacho": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:10.866Z"
+      },
+      "purdey": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:11.707Z"
+      },
+      "river": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:57.876Z"
+      },
+      "snoopy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:13.645Z"
+      },
+      "teddy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:58.347Z"
+      },
+      "yopo": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-03T11:20:27.721Z"
+      }
+    },
+    "2026-06-04": {
+      "alfie": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:43.520Z"
+      },
+      "aspen": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:52.984Z"
+      },
+      "bing": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:13:08.169Z"
+      },
+      "bob": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:54.274Z"
+      },
+      "cato": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:13:09.790Z"
+      },
+      "clover": {
+        "status": "boarding",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:54.862Z"
+      },
+      "gigi": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:44.542Z"
+      },
+      "jimmy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:56.679Z"
+      },
+      "lara": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:13:11.831Z"
+      },
+      "lulu": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:45.602Z"
+      },
+      "margot": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:13:03.045Z"
+      },
+      "moses": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:13:13.401Z"
+      },
+      "nellie": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:13:05.701Z"
+      },
+      "neo": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:13:06.241Z"
+      },
+      "pierre": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:46.918Z"
+      },
+      "pistacho": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:46.712Z"
+      },
+      "purdey": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:48.433Z"
+      },
+      "river": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:13:13.229Z"
+      },
+      "snoopy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:12:50.214Z"
+      },
+      "teddy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:13:14.920Z"
+      },
+      "yopo": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-04T14:13:08.353Z"
+      }
+    },
+    "2026-06-05": {
+      "alfie": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:38:54.913Z"
+      },
+      "aspen": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:02.006Z"
+      },
+      "bing": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:12.441Z"
+      },
+      "cato": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:12.954Z"
+      },
+      "clover": {
+        "status": "boarding",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:04.183Z"
+      },
+      "coco": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:14.173Z"
+      },
+      "flaco": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:14.926Z"
+      },
+      "gigi": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:38:56.409Z"
+      },
+      "lara": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:16.414Z"
+      },
+      "lulu": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:38:56.958Z"
+      },
+      "margot": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:07.275Z"
+      },
+      "moses": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:16.174Z"
+      },
+      "nellie": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:08.433Z"
+      },
+      "neo": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:09.077Z"
+      },
+      "pierre": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:38:58.322Z"
+      },
+      "pistacho": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:38:58.945Z"
+      },
+      "river": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:16.927Z"
+      },
+      "snoopy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:01.505Z"
+      },
+      "teddy": {
+        "status": "walked",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:18.345Z"
+      },
+      "yopo": {
+        "status": "boarding",
+        "markedBy": "URKki9QXHvNRpMKI2RhPoSaqzAf2",
+        "markedAt": "2026-06-05T12:39:11.341Z"
+      }
     }
   },
   "meta": {
     "main": {
       "schemaVersion": 5,
-      "lastWrite": "2026-05-24T20:07:38.090Z"
+      "lastWrite": "2026-07-12T21:11:42.401Z"
     }
   },
   "counts": {
-    "dogs": 26,
-    "walkDays": 59,
-    "walkDocs": 761,
+    "dogs": 27,
+    "walkDays": 64,
+    "walkDocs": 867,
     "meta": 1
   }
 }
